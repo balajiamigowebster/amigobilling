@@ -7,32 +7,41 @@ const config = {
   password: process.env.DB_PASSWORD || '',
 };
 
-const DB_NAME = process.env.DB_NAME || 'ranga_dental_clinic'; // We keep database name or let's use process.env.DB_NAME or 'ranga_agency'
-// Note: We can reuse the database 'ranga_dental_clinic' or create a new database 'ranga_agency_db'
-const DB_TARGET = 'ranga_agency_db';
+const DB_TARGET = process.env.DB_NAME || 'ranga_agency_db';
 
 let pool;
 
 async function initializeDatabase() {
   try {
-    // Connect without database first to ensure database exists
-    const connection = await mysql.createConnection(config);
-    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${DB_TARGET}\`;`);
-    await connection.end();
+    // If running on Vercel or DB_NAME is set, connect directly to the database and skip CREATE DATABASE query
+    if (process.env.VERCEL || process.env.DB_NAME) {
+      pool = mysql.createPool({
+        ...config,
+        database: DB_TARGET,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+      });
+      console.log(`Connected to cloud database: "${DB_TARGET}"`);
+    } else {
+      // Local development fallback: Connect without database first and create it if not exists
+      const connection = await mysql.createConnection(config);
+      await connection.query(`CREATE DATABASE IF NOT EXISTS \`${DB_TARGET}\`;`);
+      await connection.end();
 
-    // Now create the pool with the database specified
-    pool = mysql.createPool({
-      ...config,
-      database: DB_TARGET,
-      waitForConnections: true,
-      connectionLimit: 10,
-      queueLimit: 0
-    });
+      pool = mysql.createPool({
+        ...config,
+        database: DB_TARGET,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0
+      });
+      console.log(`Connected to local database: "${DB_TARGET}"`);
+    }
 
-    console.log(`Connected to MariaDB database: "${DB_TARGET}"`);
     await createTables();
   } catch (error) {
-    console.error('Failed to connect to MariaDB. Please make sure XAMPP MariaDB/MySQL is running.', error.message);
+    console.error('Failed to initialize database:', error.message);
     throw error;
   }
 }
