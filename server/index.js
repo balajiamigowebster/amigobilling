@@ -9,23 +9,31 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// Initialize Database connection with automatic retries on failure
-const connectWithRetry = () => {
-  db.initializeDatabase()
-    .then(() => {
-      console.log('Database initialization completed successfully.');
-    })
-    .catch(err => {
-      console.error('Database connection failed. Retrying in 5 seconds...');
-      setTimeout(connectWithRetry, 5000);
-    });
-};
-connectWithRetry();
+let dbInitialized = false;
+let dbInitializingPromise = null;
 
-// Middleware to ensure DB connection
-const checkDbConnection = (req, res, next) => {
-  next();
+// Middleware to ensure DB connection is initialized
+const checkDbConnection = async (req, res, next) => {
+  try {
+    if (!dbInitialized) {
+      if (!dbInitializingPromise) {
+        dbInitializingPromise = db.initializeDatabase().then(() => {
+          dbInitialized = true;
+          dbInitializingPromise = null;
+        }).catch(err => {
+          dbInitializingPromise = null;
+          throw err;
+        });
+      }
+      await dbInitializingPromise;
+    }
+    next();
+  } catch (error) {
+    console.error('Database connection failed in middleware:', error.message);
+    res.status(500).json({ error: 'Database connection failed. Please check your cloud database credentials in Vercel environment variables.' });
+  }
 };
+app.use(checkDbConnection);
 
 // ================= CUSTOMER ROUTES =================
 
