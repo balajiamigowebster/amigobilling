@@ -405,6 +405,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal Server Error.' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Express Backend Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Express Backend Server is running on port ${PORT}`);
+  });
+}
+
+module.exports = app;
