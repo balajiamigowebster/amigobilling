@@ -377,6 +377,8 @@ app.delete('/api/invoices/:id', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to delete invoice.' });
   }
+});
+
 // Download database SQL file
 app.get('/api/download-db', (req, res) => {
   const path = require('path');
