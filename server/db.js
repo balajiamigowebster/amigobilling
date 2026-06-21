@@ -1,0 +1,222 @@
+const mysql = require('mysql2/promise');
+
+const config = {
+  host: process.env.DB_HOST || '127.0.0.1',
+  port: process.env.DB_PORT || 3306,
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+};
+
+const DB_NAME = process.env.DB_NAME || 'ranga_dental_clinic'; // We keep database name or let's use process.env.DB_NAME or 'ranga_agency'
+// Note: We can reuse the database 'ranga_dental_clinic' or create a new database 'ranga_agency_db'
+const DB_TARGET = 'ranga_agency_db';
+
+let pool;
+
+async function initializeDatabase() {
+  try {
+    // Connect without database first to ensure database exists
+    const connection = await mysql.createConnection(config);
+    await connection.query(`CREATE DATABASE IF NOT EXISTS \`${DB_TARGET}\`;`);
+    await connection.end();
+
+    // Now create the pool with the database specified
+    pool = mysql.createPool({
+      ...config,
+      database: DB_TARGET,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0
+    });
+
+    console.log(`Connected to MariaDB database: "${DB_TARGET}"`);
+    await createTables();
+  } catch (error) {
+    console.error('Failed to connect to MariaDB. Please make sure XAMPP MariaDB/MySQL is running.', error.message);
+    throw error;
+  }
+}
+
+async function createTables() {
+  // Let's drop old dental tables if they exist in the new database (just in case)
+  await pool.query('DROP TABLE IF EXISTS appointments, invoices, treatments, patients, doctors;');
+
+  // 1. Leads table (Project managers / Leads)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS leads (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      lead_name VARCHAR(100) NOT NULL,
+      role VARCHAR(100) NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // Seed leads
+  const [leadsCount] = await pool.query('SELECT COUNT(*) as count FROM leads');
+  if (leadsCount[0].count === 0) {
+    await pool.query(`
+      INSERT INTO leads (lead_name, role) VALUES 
+      ('Arjun Sharma', 'Project Manager'),
+      ('Priya Patel', 'Tech Lead Developer'),
+      ('Rajesh Varma', 'Digital Marketing Director')
+    `);
+    console.log('Seeded initial PM leads data.');
+  }
+
+  // 2. Customers table (Client accounts)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS customers (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customer_id_seq VARCHAR(20) UNIQUE NOT NULL,
+      customer_name VARCHAR(100) NOT NULL,
+      mobile_number VARCHAR(15) NOT NULL,
+      email VARCHAR(100),
+      pincode VARCHAR(10),
+      city VARCHAR(50),
+      address TEXT,
+      assigned_lead VARCHAR(100) DEFAULT 'Arjun Sharma',
+      project_brief TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // Seed customers
+  const [custCount] = await pool.query('SELECT COUNT(*) as count FROM customers');
+  if (custCount[0].count === 0) {
+    await pool.query(`
+      INSERT INTO customers (customer_id_seq, customer_name, mobile_number, email, city, project_brief, assigned_lead) VALUES 
+      ('C-101', 'Karan Johar', '9876543210', 'karan@dharma.com', 'Mumbai', 'E-commerce platform with Stripe payment gateway integration.', 'Arjun Sharma'),
+      ('C-102', 'Simran Kaur', '8765432109', 'simran@bakery.com', 'Delhi', 'SEO audit and Google search rankings optimization campaign.', 'Priya Patel'),
+      ('C-103', 'Rahul Sharma', '7654321098', 'rahul@sharmatech.com', 'Bangalore', 'Full social media marketing handling and weekly PPC ad ads.', 'Rajesh Varma')
+    `);
+    console.log('Seeded initial customers data.');
+  }
+
+  // 3. Services table (Agency catalog)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS services (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      service_code VARCHAR(20) UNIQUE NOT NULL,
+      service_name VARCHAR(100) NOT NULL,
+      cost DECIMAL(10, 2) NOT NULL,
+      timeline VARCHAR(30) DEFAULT '2 weeks'
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // Seed services
+  const [servCount] = await pool.query('SELECT COUNT(*) as count FROM services');
+  if (servCount[0].count === 0) {
+    await pool.query(`
+      INSERT INTO services (service_code, service_name, cost, timeline) VALUES 
+      ('S-101', 'E-commerce Website Development', 85000.00, '4 weeks'),
+      ('S-102', 'SEO Audit & Optimization', 25000.00, '2 weeks'),
+      ('S-103', 'Social Media Marketing Campaign', 35000.00, '4 weeks'),
+      ('S-104', 'Pay-Per-Click (PPC) Advertising', 45000.00, '3 weeks'),
+      ('S-105', 'Custom UI/UX Mobile Design', 30000.00, '2 weeks'),
+      ('S-106', 'Corporate Website Redesign', 50000.00, '3 weeks')
+    `);
+    console.log('Seeded initial services catalog.');
+  }
+
+  // 4. Meetings table (Client meeting logs)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS meetings (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customer_id INT NOT NULL,
+      meeting_date DATE NOT NULL,
+      meeting_time VARCHAR(20) NOT NULL,
+      agenda VARCHAR(255) NOT NULL,
+      lead_name VARCHAR(100) NOT NULL,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // Seed meetings
+  const [meetCount] = await pool.query('SELECT COUNT(*) as count FROM meetings');
+  if (meetCount[0].count === 0) {
+    const today = new Date().toISOString().slice(0, 10);
+    await pool.query(`
+      INSERT INTO meetings (customer_id, meeting_date, meeting_time, agenda, lead_name) VALUES 
+      (1, ?, '10:00 AM', 'Initial design brief & payment terms setup', 'Arjun Sharma'),
+      (2, ?, '11:30 AM', 'Review keyword reports and site indexing blockers', 'Priya Patel'),
+      (3, ?, '02:00 PM', 'Consultation on Instagram ads and campaign ROI', 'Rajesh Varma')
+    `, [today, today, today]);
+    console.log('Seeded initial meetings list.');
+  }
+
+  // 5. Invoices table (Agency invoices)
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS invoices (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      invoice_no VARCHAR(20) UNIQUE NOT NULL,
+      customer_id_seq VARCHAR(20) NOT NULL,
+      customer_name VARCHAR(100) NOT NULL,
+      service_name VARCHAR(255) NOT NULL, -- Summary description
+      items TEXT NOT NULL, -- Stringified JSON array of line items
+      amount DECIMAL(10, 2) NOT NULL, -- Total invoice amount
+      advance_paid DECIMAL(10, 2) DEFAULT 0.00, -- Advance payment made
+      gst_rate DECIMAL(5, 2) DEFAULT 18.00, -- GST rate percentage
+      status VARCHAR(20) DEFAULT 'Paid',
+      invoice_date DATE NOT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // Ensure advance_paid column exists in invoices
+  try {
+    const cols = await pool.query("SHOW COLUMNS FROM invoices LIKE 'advance_paid'");
+    if (cols[0].length === 0) {
+      await pool.query('ALTER TABLE invoices ADD COLUMN advance_paid DECIMAL(10, 2) DEFAULT 0.00 AFTER amount');
+      console.log('Database migrated: added advance_paid column to invoices table.');
+    }
+  } catch (err) {
+    console.error('Error adding advance_paid column during migration:', err.message);
+  }
+
+  // Ensure gst_rate column exists in invoices
+  try {
+    const cols = await pool.query("SHOW COLUMNS FROM invoices LIKE 'gst_rate'");
+    if (cols[0].length === 0) {
+      await pool.query('ALTER TABLE invoices ADD COLUMN gst_rate DECIMAL(5, 2) DEFAULT 18.00 AFTER advance_paid');
+      console.log('Database migrated: added gst_rate column to invoices table.');
+    }
+  } catch (err) {
+    console.error('Error adding gst_rate column during migration:', err.message);
+  }
+
+  // Seed invoices
+  const [invCount] = await pool.query('SELECT COUNT(*) as count FROM invoices');
+  if (invCount[0].count === 0) {
+    const today = new Date().toISOString().slice(0, 10);
+    
+    const items1 = JSON.stringify([
+      { title: 'E-commerce Website Development', description: 'Complete shop setup, cart integration, and custom checkout flow', rate: 85000.00, qty: 1, amount: 85000.00 }
+    ]);
+    const items2 = JSON.stringify([
+      { title: 'SEO Audit & Optimization', description: 'Technical site health check, keywords mapping, and speed optimization', rate: 25000.00, qty: 1, amount: 25000.00 }
+    ]);
+    const items3 = JSON.stringify([
+      { title: 'Social Media Marketing Campaign', description: 'Facebook and Instagram monthly ad spend and posts scheduling management', rate: 35000.00, qty: 1, amount: 35000.00 }
+    ]);
+
+    await pool.query(`
+      INSERT INTO invoices (invoice_no, customer_id_seq, customer_name, service_name, items, amount, status, invoice_date) VALUES 
+      ('INV-1001', 'C-101', 'Karan Johar', 'E-commerce Website Development', ?, 85000.00, 'Paid', ?),
+      ('INV-1002', 'C-102', 'Simran Kaur', 'SEO Audit & Optimization', ?, 25000.00, 'Unpaid', ?),
+      ('INV-1003', 'C-103', 'Rahul Sharma', 'Social Media Marketing Campaign', ?, 35000.00, 'Pending', ?)
+    `, [items1, today, items2, today, items3, today]);
+    console.log('Seeded initial agency invoices data.');
+  }
+}
+
+// Wrapper for query execution
+async function query(sql, params) {
+  if (!pool) {
+    throw new Error('Database pool not initialized. Call initializeDatabase first.');
+  }
+  const [results] = await pool.query(sql, params);
+  return results;
+}
+
+module.exports = {
+  initializeDatabase,
+  query,
+};
