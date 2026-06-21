@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Eye, AlertCircle, Sparkles, X } from 'lucide-react';
+import { Plus, Search, Eye, AlertCircle, Sparkles, X, Pencil, Trash2, ShieldAlert } from 'lucide-react';
 import { API_URL } from '../config';
 
 export default function CustomerList({ onNavigate, openRegisterModal, onCloseRegisterModal, onSaveSuccess }) {
@@ -8,6 +8,8 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
   const [leads, setLeads] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [nextCustomerId, setNextCustomerId] = useState('');
+  const [editingCustomer, setEditingCustomer] = useState(null);
+  const [deletingCustomer, setDeletingCustomer] = useState(null);
   
   // Registration Form State
   const [form, setForm] = useState({
@@ -57,6 +59,7 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
   };
 
   const handleOpenAddModal = async () => {
+    setEditingCustomer(null);
     setForm({
       customerName: '',
       mobileNumber: '',
@@ -80,8 +83,26 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
     }
   };
 
+  const handleOpenEditModal = (customer) => {
+    setEditingCustomer(customer);
+    setNextCustomerId(customer.customer_id_seq);
+    setForm({
+      customerName: customer.customer_name,
+      mobileNumber: customer.mobile_number,
+      email: customer.email || '',
+      pincode: customer.pincode || '',
+      city: customer.city || '',
+      address: customer.address || '',
+      assignedLead: customer.assigned_lead || 'Arjun Sharma',
+      projectBrief: customer.project_brief || ''
+    });
+    setFormError('');
+    setShowAddModal(true);
+  };
+
   const handleCloseModal = () => {
     setShowAddModal(false);
+    setEditingCustomer(null);
     if (onCloseRegisterModal) {
       onCloseRegisterModal();
     }
@@ -103,29 +124,61 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
     setFormError('');
 
     try {
-      const res = await fetch(`${API_URL}/api/customers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          customerIdSeq: nextCustomerId,
-          ...form
-        })
-      });
+      let res;
+      if (editingCustomer) {
+        res = await fetch(`${API_URL}/api/customers/${editingCustomer.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(form)
+        });
+      } else {
+        res = await fetch(`${API_URL}/api/customers`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            customerIdSeq: nextCustomerId,
+            ...form
+          })
+        });
+      }
 
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to register customer.');
+        throw new Error(errorData.error || 'Failed to save customer.');
       }
 
       handleCloseModal();
       fetchCustomers();
       if (onSaveSuccess) {
-        onSaveSuccess('Customer added successfully!');
+        onSaveSuccess(editingCustomer ? 'Customer updated successfully!' : 'Customer added successfully!');
       }
     } catch (err) {
       setFormError(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingCustomer) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/customers/${deletingCustomer.id}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to delete customer.');
+      }
+
+      setDeletingCustomer(null);
+      fetchCustomers();
+      if (onSaveSuccess) {
+        onSaveSuccess('Customer deleted successfully!');
+      }
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Could not delete customer.');
     }
   };
 
@@ -195,6 +248,7 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
                   <th>City</th>
                   <th>Project Lead</th>
                   <th>Project Brief / Req</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -215,6 +269,16 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
                     }} title={customer.project_brief}>
                       {customer.project_brief || 'No details recorded'}
                     </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        <button className="btn btn-outline btn-icon-only" onClick={() => handleOpenEditModal(customer)} title="Edit">
+                          <Pencil size={14} />
+                        </button>
+                        <button className="btn btn-danger btn-icon-only" onClick={() => setDeletingCustomer(customer)} title="Delete">
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -230,7 +294,7 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
             <div className="invoice-modal-header">
               <h3 style={{ fontWeight: 700, fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Sparkles size={20} style={{ color: 'var(--primary)' }} />
-                Add Customer Account
+                {editingCustomer ? 'Edit Customer Account' : 'Add Customer Account'}
               </h3>
               <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <X size={20} />
@@ -379,10 +443,35 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
               <div className="invoice-modal-footer">
                 <button type="button" className="btn btn-outline" onClick={handleCloseModal}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>
-                  {saving ? 'Saving...' : 'Add Customer'}
+                  {saving ? 'Saving...' : (editingCustomer ? 'Save Changes' : 'Add Customer')}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation */}
+      {deletingCustomer && (
+        <div className="modal-backdrop centered" onClick={() => setDeletingCustomer(null)}>
+          <div className="invoice-modal centered" style={{ maxWidth: '400px' }} onClick={e => e.stopPropagation()}>
+            <div className="invoice-modal-header" style={{ borderBottom: 'none' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger)' }}>
+                <ShieldAlert size={22} />
+                Delete Customer?
+              </h3>
+            </div>
+            <div className="invoice-modal-body" style={{ padding: '0 24px 20px 24px', minHeight: 'auto' }}>
+              <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                Are you sure you want to delete customer <strong>{deletingCustomer.customer_name}</strong> ({deletingCustomer.customer_id_seq})? This action cannot be undone.
+              </p>
+            </div>
+            <div className="invoice-modal-footer" style={{ borderTop: 'none' }}>
+              <button type="button" className="btn btn-outline" onClick={() => setDeletingCustomer(null)}>Cancel</button>
+              <button type="button" className="btn btn-danger" onClick={handleDeleteConfirm}>
+                Delete
+              </button>
+            </div>
           </div>
         </div>
       )}

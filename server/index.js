@@ -129,6 +129,57 @@ app.post('/api/customers', async (req, res) => {
   }
 });
 
+// Update customer details
+app.put('/api/customers/:id', async (req, res) => {
+  const { id } = req.params;
+  const {
+    customerName,
+    mobileNumber,
+    email,
+    pincode,
+    city,
+    address,
+    assignedLead,
+    projectBrief
+  } = req.body;
+
+  if (!customerName || !mobileNumber) {
+    return res.status(400).json({ error: 'Customer Name and Mobile Number are required.' });
+  }
+
+  try {
+    await db.query(
+      `UPDATE customers SET 
+        customer_name = ?, 
+        mobile_number = ?, 
+        email = ?, 
+        pincode = ?, 
+        city = ?, 
+        address = ?, 
+        assigned_lead = ?, 
+        project_brief = ? 
+      WHERE id = ?`,
+      [customerName, mobileNumber, email || null, pincode || null, city || null, address || null, assignedLead || 'Arjun Sharma', projectBrief || null, id]
+    );
+    res.json({ message: 'Customer updated successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update customer.' });
+  }
+});
+
+// Delete customer
+app.delete('/api/customers/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM customers WHERE id = ?', [id]);
+    res.json({ message: 'Customer deleted successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete customer.' });
+  }
+});
+
 
 // ================= LEAD ROUTES (PMs) =================
 
