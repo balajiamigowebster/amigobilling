@@ -9,6 +9,17 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Handle subdirectory/context path routing (e.g. Passenger/cPanel)
+app.use((req, res, next) => {
+  if (req.url.startsWith('/amigobilling')) {
+    req.url = req.url.substring('/amigobilling'.length);
+    if (!req.url.startsWith('/')) {
+      req.url = '/' + req.url;
+    }
+  }
+  next();
+});
+
 let dbInitialized = false;
 let dbInitializingPromise = null;
 
