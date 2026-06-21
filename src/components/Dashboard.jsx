@@ -30,7 +30,7 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
         setServices(servicesData);
 
         // 4. Fetch Today's Meetings
-        const today = new Date().toISOString().slice(0, 10);
+        const today = new Date().toLocaleDateString('sv');
         const meetRes = await fetch(`${API_URL}/api/meetings?date=${today}`);
         const meetData = await meetRes.json();
         setMeetings(meetData);
@@ -48,9 +48,9 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   // Summary Metrics
   const totalCustomers = customers.length;
   
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('sv');
   const todayRevenue = invoices
-    .filter(inv => inv.invoice_date.slice(0, 10) === today && inv.status === 'Paid')
+    .filter(inv => new Date(inv.invoice_date).toLocaleDateString('sv') === today && inv.status === 'Paid')
     .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
 
   const servicesOfferedCount = services.length;

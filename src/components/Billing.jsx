@@ -22,7 +22,7 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
     amount: '0',
     advancePaid: '0', // Advance paid field
     status: 'Paid',
-    invoiceDate: new Date().toISOString().slice(0, 10),
+    invoiceDate: new Date().toLocaleDateString('sv'),
     gstRate: '18'
   });
 
@@ -98,7 +98,7 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
       amount: defaultItem.amount.toString(),
       advancePaid: '0',
       status: 'Paid',
-      invoiceDate: new Date().toISOString().slice(0, 10),
+      invoiceDate: new Date().toLocaleDateString('sv'),
       gstRate: '18'
     });
     setItems([defaultItem]);

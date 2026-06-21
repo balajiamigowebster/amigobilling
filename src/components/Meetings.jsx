@@ -6,14 +6,14 @@ export default function Meetings({ onNavigate, showToast }) {
   const [meetings, setMeetings] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [leads, setLeads] = useState([]);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().slice(0, 10));
+  const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv'));
   const [showBookModal, setShowBookModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Form State
   const [form, setForm] = useState({
     customerId: '',
-    meetingDate: new Date().toISOString().slice(0, 10),
+    meetingDate: new Date().toLocaleDateString('sv'),
     meetingTime: '10:00 AM',
     agenda: '',
     leadName: ''
