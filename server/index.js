@@ -377,6 +377,24 @@ app.delete('/api/invoices/:id', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to delete invoice.' });
   }
+// Download database SQL file
+app.get('/api/download-db', (req, res) => {
+  const path = require('path');
+  const { exec } = require('child_process');
+  const dumpCmd = `"D:\\xampp-portable-windows-x64-7.1.33-1-VC14\\xampp\\mysql\\bin\\mysqldump.exe" -u root ranga_agency_db`;
+  const backupPath = path.join(__dirname, 'ranga_agency_db_backup.sql');
+  
+  exec(`${dumpCmd} > "${backupPath}"`, (error, stdout, stderr) => {
+    if (error) {
+      console.error(`mysqldump error: ${error.message}`);
+      return res.status(500).json({ error: 'Failed to generate database backup.' });
+    }
+    res.download(backupPath, 'ranga_agency_db.sql', (err) => {
+      if (err) {
+        console.error(`Download error: ${err.message}`);
+      }
+    });
+  });
 });
 
 // ================= GLOBAL ERROR HANDLING =================
