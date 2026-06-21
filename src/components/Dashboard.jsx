@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, IndianRupee, Briefcase, AlertCircle, Plus, Calendar, Video } from 'lucide-react';
+import { API_URL } from '../config';
 
 export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const [customers, setCustomers] = useState([]);
@@ -7,12 +8,6 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const [services, setServices] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000'
-    : (window.location.hostname.includes('192.168.') || window.location.hostname.includes('10.') || window.location.hostname.includes('172.'))
-      ? `http://${window.location.hostname}:5000`
-      : '';
 
   useEffect(() => {
     const fetchData = async () => {

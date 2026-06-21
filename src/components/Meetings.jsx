@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, Clock, Plus, Search, User, FileText, AlertCircle } from 'lucide-react';
+import { API_URL } from '../config';
 
 export default function Meetings({ onNavigate, showToast }) {
   const [meetings, setMeetings] = useState([]);
@@ -20,11 +21,6 @@ export default function Meetings({ onNavigate, showToast }) {
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000'
-    : (window.location.hostname.includes('192.168.') || window.location.hostname.includes('10.') || window.location.hostname.includes('172.'))
-      ? `http://${window.location.hostname}:5000`
-      : '';
 
   const timeSlots = [
     '09:00 AM', '09:30 AM', '10:00 AM', '10:30 AM', '11:00 AM', '11:30 AM',

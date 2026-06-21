@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Printer, Pencil, Trash2, Sparkles, AlertCircle, ShieldAlert, X } from 'lucide-react';
+import { API_URL } from '../config';
 
 export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
   const [invoices, setInvoices] = useState([]);
@@ -35,11 +36,6 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
   // Delete State
   const [deletingInvoice, setDeletingInvoice] = useState(null);
 
-  const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-    ? 'http://localhost:5000'
-    : (window.location.hostname.includes('192.168.') || window.location.hostname.includes('10.') || window.location.hostname.includes('172.'))
-      ? `http://${window.location.hostname}:5000`
-      : '';
 
   useEffect(() => {
     fetchInvoices();
