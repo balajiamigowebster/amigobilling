@@ -48,7 +48,7 @@ async function initializeDatabase() {
 
 async function createTables() {
   // Let's drop old dental tables if they exist in the new database (just in case)
-  await pool.query('DROP TABLE IF EXISTS appointments, invoices, treatments, patients, doctors;');
+  await pool.query('DROP TABLE IF EXISTS appointments, treatments, patients, doctors;');
 
   // 1. Leads table (Project managers / Leads)
   await pool.query(`
