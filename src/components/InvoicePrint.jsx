@@ -141,7 +141,7 @@ export default function InvoicePrint({ invoice, onClose }) {
                   <tr>
                     <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'normal' }}>State</td>
                     <td style={{ padding: '3px 0', color: '#334155', whiteSpace: 'normal' }}>
-                      {invoice.city ? (invoice.city.toLowerCase() === 'delhi' ? 'Delhi' : invoice.city.toLowerCase() === 'mumbai' ? 'Maharashtra' : invoice.city.toLowerCase() === 'bangalore' ? 'Karnataka' : 'Tamil Nadu') : 'Tamil Nadu'}
+                      Tamil Nadu
                     </td>
                   </tr>
                   {/* <tr>
