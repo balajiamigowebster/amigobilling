@@ -610,6 +610,9 @@ tr:hover td {
 
 /* Print Styles */
 @media print {
+  @page {
+    margin: 5%;
+  }
   body {
     background-color: #ffffff;
     color: #000000;
