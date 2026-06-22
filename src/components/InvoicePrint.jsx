@@ -1,6 +1,63 @@
 import React from 'react';
 import { X, Printer } from 'lucide-react';
 
+const getStateFromCity = (city) => {
+  if (!city) return 'Tamil Nadu';
+  const cleanCity = city.trim().toLowerCase();
+  
+  const cityToStateMap = {
+    chennai: 'Tamil Nadu',
+    coimbatore: 'Tamil Nadu',
+    madurai: 'Tamil Nadu',
+    trichy: 'Tamil Nadu',
+    salem: 'Tamil Nadu',
+    tirunelveli: 'Tamil Nadu',
+    vellore: 'Tamil Nadu',
+    erode: 'Tamil Nadu',
+    thanjavur: 'Tamil Nadu',
+    vengambakkam: 'Tamil Nadu',
+    kilkattalai: 'Tamil Nadu',
+    
+    mumbai: 'Maharashtra',
+    pune: 'Maharashtra',
+    nagpur: 'Maharashtra',
+    thane: 'Maharashtra',
+    nashik: 'Maharashtra',
+    
+    bangalore: 'Karnataka',
+    bengaluru: 'Karnataka',
+    mysore: 'Karnataka',
+    hubli: 'Karnataka',
+    mangalore: 'Karnataka',
+    
+    delhi: 'Delhi',
+    'new delhi': 'Delhi',
+    noida: 'Uttar Pradesh',
+    gurugram: 'Haryana',
+    gurgaon: 'Haryana',
+    
+    hyderabad: 'Telangana',
+    secunderabad: 'Telangana',
+    visakhapatnam: 'Andhra Pradesh',
+    
+    kolkata: 'West Bengal',
+    
+    ahmedabad: 'Gujarat',
+    surat: 'Gujarat',
+    vadodara: 'Gujarat',
+    
+    jaipur: 'Rajasthan',
+    lucknow: 'Uttar Pradesh',
+    patna: 'Bihar',
+    bhopal: 'Madhya Pradesh',
+    indore: 'Madhya Pradesh',
+    kochi: 'Kerala',
+    trivandrum: 'Kerala'
+  };
+
+  return cityToStateMap[cleanCity] || 'Tamil Nadu';
+};
+
 export default function InvoicePrint({ invoice, onClose }) {
   if (!invoice) return null;
 
@@ -141,7 +198,7 @@ export default function InvoicePrint({ invoice, onClose }) {
                   <tr>
                     <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'normal' }}>State</td>
                     <td style={{ padding: '3px 0', color: '#334155', whiteSpace: 'normal' }}>
-                      Tamil Nadu
+                      {getStateFromCity(invoice.city)}
                     </td>
                   </tr>
                   {/* <tr>
