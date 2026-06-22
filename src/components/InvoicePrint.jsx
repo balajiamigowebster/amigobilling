@@ -268,10 +268,10 @@ export default function InvoicePrint({ invoice, onClose }) {
                 lineHeight: '1.4'
               }}>
                 <div style={{ fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>Amigo Webster</div>
-                <p>Bank: <strong>YES BANK LTD</strong></p>
-                <p>Account Number: <strong>102384100000294</strong></p>
-                <p>Branch: <strong>Adyar</strong></p>
-                <p>IFSC Code: <strong>YESB0001023</strong></p>
+                <p>Bank: <strong>STATE BANK OF INDIA</strong></p>
+                <p>Account Number: <strong>43126406283</strong></p>
+                <p>Branch: <strong>Kilkattalai</strong></p>
+                <p>IFSC Code: <strong>SBIN0016545</strong></p>
               </div>
             </div>
 
