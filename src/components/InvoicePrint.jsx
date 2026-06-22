@@ -87,9 +87,9 @@ export default function InvoicePrint({ invoice, onClose }) {
                 <p>Chennai - 600129</p>
                 <p style={{ marginTop: '2px' }}>Mob: 9445332233</p>
                 <p>Email: balaji@amigowebster.com</p>
-                <p style={{ marginTop: '2px', fontSize: '0.75rem', color: '#777' }}>
+                {/* <p style={{ marginTop: '2px', fontSize: '0.75rem', color: '#777' }}>
                   GSTIN: 33AAVFG9372Q1ZA • PAN: AAVFG9372Q
-                </p>
+                </p> */}
               </div>
             </div>
 
@@ -144,10 +144,10 @@ export default function InvoicePrint({ invoice, onClose }) {
                       {invoice.city ? (invoice.city.toLowerCase() === 'delhi' ? 'Delhi' : invoice.city.toLowerCase() === 'mumbai' ? 'Maharashtra' : invoice.city.toLowerCase() === 'bangalore' ? 'Karnataka' : 'Tamil Nadu') : 'Tamil Nadu'}
                     </td>
                   </tr>
-                  <tr>
+                  {/* <tr>
                     <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'normal' }}>GST</td>
                     <td style={{ padding: '3px 0', color: '#334155', whiteSpace: 'normal' }}>33ABQCS5582H1ZJ</td>
-                  </tr>
+                  </tr> */}
                 </tbody>
               </table>
             </div>
