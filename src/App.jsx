@@ -338,7 +338,7 @@ function ProposalsTab({ showToast }) {
           <div style={{ borderBottom: '2px solid var(--primary)', paddingBottom: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Code size={20} style={{ color: 'var(--primary)' }} />
             <div>
-              <h2 style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.25rem', color: '#111' }}>RANGA'S DIGITAL SOLUTIONS</h2>
+              <h2 style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.25rem', color: '#111' }}>AMIGO WEBSTER</h2>
               <p style={{ fontSize: '0.72rem', color: '#555' }}>Tech Hub Tower, IT Park | Phone: +91 98765 43210</p>
             </div>
           </div>

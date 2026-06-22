@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Stethoscope, Lock, User, AlertCircle } from 'lucide-react';
+import { Lock, User, AlertCircle } from 'lucide-react';
 
 export default function Login({ onLoginSuccess }) {
   const [username, setUsername] = useState('');
@@ -32,24 +32,24 @@ export default function Login({ onLoginSuccess }) {
         boxShadow: 'var(--shadow-lg)'
       }}>
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-          <div style={{
-            display: 'inline-flex',
-            backgroundColor: 'var(--primary-light)',
-            color: 'var(--primary)',
-            padding: '16px',
-            borderRadius: '50%',
-            marginBottom: '16px'
-          }}>
-            <Stethoscope size={32} />
-          </div>
-          <h2>RANGA'S</h2>
+          <img
+            src="/logo.png"
+            alt="Amigo Webster Logo"
+            style={{
+              height: '64px',
+              width: 'auto',
+              objectFit: 'contain',
+              marginBottom: '16px'
+            }}
+          />
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>AMIGO WEBSTER</h2>
           <p style={{
             fontSize: '0.85rem',
             color: 'var(--text-secondary)',
             fontWeight: 600,
             letterSpacing: '1.5px',
             marginTop: '4px'
-          }}>DENTAL CLINIC & BILLING</p>
+          }}>BILLING & MANAGEMENT SYSTEM</p>
         </div>
 
         {error && (
@@ -120,6 +120,7 @@ export default function Login({ onLoginSuccess }) {
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
             Sign In
           </button>
+
         </form>
       </div>
     </div>
