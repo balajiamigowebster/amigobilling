@@ -654,7 +654,7 @@ tr:hover td {
   }
   
   .invoice-modal-body {
-    padding: 0 !important;
+    padding: 0.5in !important;
     overflow: visible !important;
   }
 }

@@ -342,44 +342,44 @@ export default function InvoicePrint({ invoice, onClose }) {
               }}>
                 <tbody>
                   <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500 }}>Sub Total</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600' }}>
+                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>Sub Total</td>
+                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>
                       ₹{subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500 }}>Discount (0%)</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600' }}>₹0.00</td>
+                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>Discount (0%)</td>
+                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>₹0.00</td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500 }}>CGST (0%)</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600' }}>₹0.00</td>
+                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>CGST (0%)</td>
+                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>₹0.00</td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500 }}>SGST (0%)</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600' }}>₹0.00</td>
+                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>SGST (0%)</td>
+                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>₹0.00</td>
                   </tr>
                   <tr style={{ borderBottom: '1.5px solid #1e293b' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500 }}>IGST ({igstRate}%)</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600' }}>
+                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>IGST ({igstRate}%)</td>
+                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>
                       ₹{igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                   <tr style={{ fontSize: '0.92rem' }}>
-                    <td style={{ padding: '6px 0', fontWeight: '800', color: '#2b3e50' }}>Grand Total</td>
-                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '800', color: '#2b3e50' }}>
+                    <td style={{ padding: '6px 0', fontWeight: '800', color: '#2b3e50', whiteSpace: 'nowrap' }}>Grand Total</td>
+                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '800', color: '#2b3e50', whiteSpace: 'nowrap' }}>
                       ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                   <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500 }}>Advance Paid</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600' }}>
+                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>Advance Paid</td>
+                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>
                       ₹{parseFloat(invoice.advance_paid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
                   <tr style={{ fontSize: '0.92rem', borderTop: '1.5px solid #1e293b' }}>
-                    <td style={{ padding: '6px 0', fontWeight: '800', color: '#2b3e50' }}>Balance Due</td>
-                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '800', color: '#2b3e50' }}>
+                    <td style={{ padding: '6px 0', fontWeight: '800', color: '#2b3e50', whiteSpace: 'nowrap' }}>Balance Due</td>
+                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '800', color: '#2b3e50', whiteSpace: 'nowrap' }}>
                       ₹{(grandTotal - parseFloat(invoice.advance_paid || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
                     </td>
                   </tr>
