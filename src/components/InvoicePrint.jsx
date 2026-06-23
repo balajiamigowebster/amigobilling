@@ -140,7 +140,7 @@ export default function InvoicePrint({ invoice, onClose }) {
           backgroundColor: '#ffffff',
           color: '#333333',
           fontFamily: "'Inter', sans-serif",
-          fontSize: '8pt',
+          fontSize: '8px',
           lineHeight: '1.35'
         }}>
           
