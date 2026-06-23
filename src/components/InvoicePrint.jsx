@@ -492,15 +492,22 @@ export default function InvoicePrint({ invoice, onClose }) {
 
             {/* Authorised Signatures */}
             <div style={{ width: '38%', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
+              <div style={{ fontSize: '0.95em', fontWeight: 700, color: '#111', marginBottom: '8px' }}>
+                For Amigo Webster
+              </div>
+
               {/* Signature Graphic SVG */}
-              <div style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px 0' }}>
+              <div style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px 0' }}>
                 <svg width="100" height="36" viewBox="0 0 100 36" xmlns="http://www.w3.org/2000/svg">
                   <path d="M 10 20 Q 20 5, 30 25 T 50 10 T 70 25 T 90 15" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" />
                   <path d="M 25 10 Q 35 30, 45 10" fill="none" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </div>
 
-              <div style={{ borderBottom: '1px solid #111', width: '150px', marginBottom: '4px' }}></div>
+              <div style={{ borderBottom: '1.5px solid #111', width: '160px', marginBottom: '4px' }}></div>
+              <div style={{ fontSize: '0.9em', fontWeight: '700', color: '#111' }}>
+                Proprietor
+              </div>
             </div>
           </div>
         </div>
