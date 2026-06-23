@@ -309,8 +309,26 @@ export default function InvoicePrint({ invoice, onClose }) {
               </tr>
             </thead>
             <tbody>
+              {/* Service scope message row inside table body - right below table headers and before first product row */}
+              <tr>
+                <td colSpan={6} style={{ 
+                  padding: '10px 12px', 
+                  borderBottom: '1.5px solid #2b3e50', 
+                  fontSize: '1em', 
+                  lineHeight: '1.4', 
+                  color: '#111',
+                  backgroundColor: '#ffffff',
+                  textAlign: 'left'
+                }}>
+                  Towards the charges of Design and Development
+                  <br />
+                  <strong style={{ color: '#111', fontSize: '1.05em' }}>
+                    {invoice.project_brief || invoice.service_name || 'SEO Audit & Optimization'}
+                  </strong>
+                </td>
+              </tr>
               {parsedItems.map((item, idx) => (
-                <tr key={idx} style={{ verticalAlign: 'top', backgroundColor: idx % 2 === 0 ? '#f8fafc' : '#ffffff' }}>
+                <tr key={idx} style={{ verticalAlign: 'top', backgroundColor: idx % 2 === 1 ? '#f8fafc' : '#ffffff' }}>
                   <td style={{ padding: '8px', textAlign: 'center', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'normal' }}>{idx + 1}</td>
                   <td style={{ padding: '8px', color: '#1e293b', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'normal', wordBreak: 'break-word' }}>
                     <div style={{ fontWeight: '600' }}>{item.title}</div>
@@ -346,22 +364,6 @@ export default function InvoicePrint({ invoice, onClose }) {
               })}
             </tbody>
           </table>
-
-          {/* Service scope message */}
-          <div style={{ 
-            fontSize: '1em', 
-            color: '#111', 
-            marginTop: '14px',
-            marginBottom: '14px', 
-            padding: '4px 0',
-            lineHeight: '1.4'
-          }}>
-            Towards the charges of Design and Development
-            <br />
-            <strong style={{ color: '#111', fontSize: '1.05em' }}>
-              {invoice.project_brief || invoice.service_name || 'Aumne AI - Collateral'}
-            </strong>
-          </div>
 
           {/* Footer Grid - Banks and Totals */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px' }}>
