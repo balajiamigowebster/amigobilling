@@ -87,9 +87,35 @@ export default function InvoicePrint({ invoice, onClose }) {
   }
 
   const subTotal = parseFloat(invoice.amount) || 0;
-  const igstRate = invoice.gst_rate !== undefined ? parseFloat(invoice.gst_rate) : 18;
+  
+  // Dynamic Tax Calculation based on interstate customer rules
+  const customerState = getStateFromCity(invoice.city);
+  const isInterState = customerState.trim().toLowerCase() !== 'tamil nadu';
+  
+  let cgstRate = 0;
+  let sgstRate = 0;
+  let igstRate = 0;
+  
+  if (isInterState) {
+    igstRate = invoice.gst_rate !== undefined ? parseFloat(invoice.gst_rate) : 18;
+  } else {
+    cgstRate = (invoice.gst_rate !== undefined ? parseFloat(invoice.gst_rate) : 18) / 2;
+    sgstRate = cgstRate;
+  }
+  
+  const cgstAmount = subTotal * (cgstRate / 100);
+  const sgstAmount = subTotal * (sgstRate / 100);
   const igstAmount = subTotal * (igstRate / 100);
-  const grandTotal = subTotal + igstAmount;
+  const grandTotal = subTotal + cgstAmount + sgstAmount + igstAmount;
+
+  // Currency formatter matching image representation
+  const formatCurrency = (val) => {
+    const num = parseFloat(val) || 0;
+    if (num % 1 === 0) {
+      return '₹ ' + Math.round(num).toLocaleString('en-IN');
+    }
+    return '₹ ' + num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
 
   return (
     <div className="modal-backdrop centered" onClick={onClose}>
@@ -114,7 +140,7 @@ export default function InvoicePrint({ invoice, onClose }) {
           backgroundColor: '#ffffff',
           color: '#333333',
           fontFamily: "'Inter', sans-serif",
-          fontSize: '0.82rem',
+          fontSize: '8pt',
           lineHeight: '1.35'
         }}>
           
@@ -123,34 +149,31 @@ export default function InvoicePrint({ invoice, onClose }) {
             {/* Left Company Block */}
             <div style={{ width: '55%' }}>
               <div style={{
-                backgroundColor: '#2b3e50',
+                backgroundColor: '#3b4b5a',
                 color: '#ffffff',
-                padding: '6px 18px',
+                padding: '6px 20px',
                 fontWeight: '700',
-                fontSize: '1rem',
-                letterSpacing: '1px',
-                width: 'fit-content',
+                fontSize: '1.2em',
+                letterSpacing: '1.5px',
+                width: '180px',
+                textAlign: 'center',
                 borderRadius: '2px',
-                marginBottom: '10px',
-                textTransform: 'uppercase'
+                marginBottom: '10px'
               }}>
                 INVOICE
               </div>
-              <h2 style={{ fontSize: '1.3rem', fontWeight: 800, color: '#111', lineHeight: '1.2', marginBottom: '4px' }}>
+              <h2 style={{ fontSize: '1.5em', fontWeight: 800, color: '#111', lineHeight: '1.2', marginBottom: '4px', fontFamily: "'Outfit', sans-serif" }}>
                 Amigo Webster
               </h2>
-              <div style={{ color: '#555', fontSize: '0.78rem' }}>
+              <div style={{ color: '#333', fontSize: '0.95em', lineHeight: '1.4' }}>
                 <p>Plot No 6 Anna Main Road Vengambakkam,</p>
                 <p>Chennai - 600129</p>
                 <p style={{ marginTop: '2px' }}>Mob: 9445332233</p>
                 <p>Email: balaji@amigowebster.com</p>
-                {/* <p style={{ marginTop: '2px', fontSize: '0.75rem', color: '#777' }}>
-                  GSTIN: 33AAVFG9372Q1ZA • PAN: AAVFG9372Q
-                </p> */}
               </div>
             </div>
 
-            {/* Right Logo Block */}
+            {/* Right Logo Block (AMIGO WEBSTER Logo image) */}
             <div style={{ width: '40%', textAlign: 'right', display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
               <img 
                 src="/logo.png" 
@@ -171,40 +194,51 @@ export default function InvoicePrint({ invoice, onClose }) {
             {/* BILL TO Client Box */}
             <div style={{
               width: '58%',
-              border: '1px solid #e2e8f0',
+              border: 'none',
               borderRadius: '4px',
               padding: '12px 14px',
               backgroundColor: '#f8fafc'
             }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '6px' }}>
-                BILL TO:
-              </span>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95em' }}>
                 <tbody>
                   <tr>
-                    <td style={{ width: '30%', padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'normal' }}>Company Name</td>
-                    <td style={{ padding: '3px 0', fontWeight: '700', color: '#1e293b', whiteSpace: 'normal' }}>{invoice.customer_name}</td>
+                    <td style={{ width: '30%', padding: '4px 0', color: '#475569', fontWeight: 700 }}>BILL TO:</td>
+                    <td style={{ padding: '4px 0 4px 6px', fontWeight: '700', color: '#1e293b', borderBottom: '1px solid #111' }}>{invoice.customer_name}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, verticalAlign: 'top', whiteSpace: 'normal' }}>Address</td>
-                    <td style={{ padding: '3px 0', color: '#334155', whiteSpace: 'normal', wordBreak: 'break-word' }}>
-                      {invoice.address || 'Plot No 6, Vengambakkam Road, IT Hub, Chennai'}
+                    <td style={{ padding: '4px 0', color: '#475569', fontWeight: 600 }}>Company Name</td>
+                    <td style={{ padding: '4px 0 4px 6px', fontWeight: '700', color: '#1e293b', borderBottom: '1px solid #111' }}>{invoice.customer_name}</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', color: '#475569', fontWeight: 600, verticalAlign: 'top', paddingTop: '4px' }}>Address</td>
+                    <td style={{ 
+                      padding: '4px 0 4px 6px', 
+                      color: '#333', 
+                      lineHeight: '20px',
+                      backgroundImage: 'linear-gradient(to bottom, transparent 19px, #111 19px)',
+                      backgroundSize: '100% 20px',
+                      whiteSpace: 'normal', 
+                      wordBreak: 'break-word' 
+                    }}>
+                      {invoice.address || 'No. 303, C Block, Sapthagiri Sandalwood, Krishnarajapuram, Kadugodi, Bengaluru,'}
                     </td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'normal' }}>Pincode</td>
-                    <td style={{ padding: '3px 0', color: '#334155', whiteSpace: 'normal' }}>{invoice.pincode || '600129'}</td>
+                    <td style={{ padding: '4px 0', color: '#475569', fontWeight: 600 }}>Pincode</td>
+                    <td style={{ padding: '4px 0 4px 6px', color: '#333', borderBottom: '1px solid #111' }}>{invoice.pincode || '560067'}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'normal' }}>State</td>
-                    <td style={{ padding: '3px 0', color: '#334155', whiteSpace: 'normal' }}>
+                    <td style={{ padding: '4px 0', color: '#475569', fontWeight: 600 }}>State</td>
+                    <td style={{ padding: '4px 0 4px 6px', color: '#333', borderBottom: '1px solid #111' }}>
                       {getStateFromCity(invoice.city)}
                     </td>
                   </tr>
-                  {/* <tr>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'normal' }}>GST</td>
-                    <td style={{ padding: '3px 0', color: '#334155', whiteSpace: 'normal' }}>33ABQCS5582H1ZJ</td>
-                  </tr> */}
+                  <tr>
+                    <td style={{ padding: '4px 0', color: '#475569', fontWeight: 600 }}>GST</td>
+                    <td style={{ padding: '4px 0 4px 6px', color: '#333', borderBottom: '1px solid #111' }}>
+                      {invoice.gst_no || '29ABQCS5582H1ZJ'}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
@@ -214,8 +248,8 @@ export default function InvoicePrint({ invoice, onClose }) {
               <table style={{ 
                 width: '100%', 
                 borderCollapse: 'collapse', 
-                border: '1px solid #cbd5e1', 
-                fontSize: '0.75rem',
+                border: '1.5px solid #2b3e50', 
+                fontSize: '0.9em',
                 textAlign: 'left'
               }}>
                 <tbody>
@@ -228,11 +262,26 @@ export default function InvoicePrint({ invoice, onClose }) {
                     { label: 'PO Date', val: '—' },
                     { label: 'Vendor Code', val: '—' }
                   ].map((row, idx) => (
-                    <tr key={idx} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                      <th style={{ padding: '4px 8px', fontWeight: '600', color: '#475569', backgroundColor: '#f1f5f9', width: '50%', whiteSpace: 'normal' }}>
+                    <tr key={idx}>
+                      <th style={{ 
+                        padding: '4px 8px', 
+                        fontWeight: '600', 
+                        color: '#333', 
+                        border: '1.5px solid #2b3e50',
+                        backgroundColor: '#ffffff',
+                        width: '50%',
+                        whiteSpace: 'normal' 
+                      }}>
                         {row.label}
                       </th>
-                      <td style={{ padding: '4px 8px', color: '#1e293b', fontWeight: '500', textAlign: 'center', whiteSpace: 'normal' }}>
+                      <td style={{ 
+                        padding: '4px 8px', 
+                        color: '#1e293b', 
+                        fontWeight: '600', 
+                        textAlign: 'center', 
+                        border: '1.5px solid #2b3e50',
+                        whiteSpace: 'normal' 
+                      }}>
                         {row.val}
                       </td>
                     </tr>
@@ -244,40 +293,44 @@ export default function InvoicePrint({ invoice, onClose }) {
 
           {/* Service scope message */}
           <div style={{ 
-            fontSize: '0.78rem', 
-            color: '#333', 
-            marginBottom: '10px', 
-            padding: '2px 0',
-            fontWeight: 500
+            fontSize: '1em', 
+            color: '#111', 
+            marginBottom: '14px', 
+            padding: '4px 0',
+            lineHeight: '1.4'
           }}>
-            Towards the charges of Design and Development for project: <strong style={{ color: '#2b3e50' }}>Website Implementation & Digital Assets</strong>
+            Towards the charges of Design and Development
+            <br />
+            <strong style={{ color: '#111', fontSize: '1.05em' }}>
+              {invoice.project_brief || invoice.service_name || 'Aumne AI - Collateral'}
+            </strong>
           </div>
 
           {/* Description Itemized Table */}
           <table style={{ 
             width: '100%', 
             borderCollapse: 'collapse', 
-            border: '1px solid #cbd5e1', 
+            border: '1.5px solid #2b3e50', 
             marginBottom: '16px'
           }}>
             <thead>
-              <tr style={{ backgroundColor: '#2b3e50', color: '#ffffff' }}>
-                <th style={{ padding: '8px', fontSize: '0.75rem', fontWeight: '700', textAlign: 'center', border: '1px solid #cbd5e1', width: '8%', whiteSpace: 'normal' }}>S. No</th>
-                <th style={{ padding: '8px', fontSize: '0.75rem', fontWeight: '700', textAlign: 'left', border: '1px solid #cbd5e1', width: '52%', whiteSpace: 'normal' }}>DESCRIPTION OF ITEMS</th>
-                <th style={{ padding: '8px', fontSize: '0.75rem', fontWeight: '700', textAlign: 'center', border: '1px solid #cbd5e1', width: '12%', whiteSpace: 'normal' }}>HSN / SAC</th>
-                <th style={{ padding: '8px', fontSize: '0.75rem', fontWeight: '700', textAlign: 'center', border: '1px solid #cbd5e1', width: '8%', whiteSpace: 'normal' }}>QTY</th>
-                <th style={{ padding: '8px', fontSize: '0.75rem', fontWeight: '700', textAlign: 'right', border: '1px solid #cbd5e1', width: '10%', whiteSpace: 'normal' }}>PRICE</th>
-                <th style={{ padding: '8px', fontSize: '0.75rem', fontWeight: '700', textAlign: 'right', border: '1px solid #cbd5e1', width: '10%', whiteSpace: 'normal' }}>Amount</th>
+              <tr style={{ backgroundColor: '#3b4b5a', color: '#ffffff' }}>
+                <th style={{ padding: '8px', fontSize: '0.95em', fontWeight: '700', textAlign: 'center', border: '1.5px solid #2b3e50', width: '8%', whiteSpace: 'normal' }}>S. No</th>
+                <th style={{ padding: '8px', fontSize: '0.95em', fontWeight: '700', textAlign: 'left', border: '1.5px solid #2b3e50', width: '52%', whiteSpace: 'normal' }}>DESCRIPTION OF ITEMS</th>
+                <th style={{ padding: '8px', fontSize: '0.95em', fontWeight: '700', textAlign: 'center', border: '1.5px solid #2b3e50', width: '12%', whiteSpace: 'normal' }}>HSN / SAC</th>
+                <th style={{ padding: '8px', fontSize: '0.95em', fontWeight: '700', textAlign: 'center', border: '1.5px solid #2b3e50', width: '8%', whiteSpace: 'normal' }}>QTY</th>
+                <th style={{ padding: '8px', fontSize: '0.95em', fontWeight: '700', textAlign: 'right', border: '1.5px solid #2b3e50', width: '10%', whiteSpace: 'normal' }}>PRICE</th>
+                <th style={{ padding: '8px', fontSize: '0.95em', fontWeight: '700', textAlign: 'right', border: '1.5px solid #2b3e50', width: '10%', whiteSpace: 'normal' }}>Amount</th>
               </tr>
             </thead>
             <tbody>
               {parsedItems.map((item, idx) => (
-                <tr key={idx} style={{ verticalAlign: 'top' }}>
+                <tr key={idx} style={{ verticalAlign: 'top', backgroundColor: idx % 2 === 0 ? '#f8fafc' : '#ffffff' }}>
                   <td style={{ padding: '8px', textAlign: 'center', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'normal' }}>{idx + 1}</td>
                   <td style={{ padding: '8px', color: '#1e293b', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'normal', wordBreak: 'break-word' }}>
                     <div style={{ fontWeight: '600' }}>{item.title}</div>
                     {item.description && (
-                      <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '2px', fontWeight: 'normal' }}>
+                      <div style={{ fontSize: '0.85em', color: '#64748b', marginTop: '2px', fontWeight: 'normal' }}>
                         {item.description}
                       </div>
                     )}
@@ -285,24 +338,27 @@ export default function InvoicePrint({ invoice, onClose }) {
                   <td style={{ padding: '8px', textAlign: 'center', color: '#475569', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'normal' }}>998382</td>
                   <td style={{ padding: '8px', textAlign: 'center', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'normal' }}>{item.qty}</td>
                   <td style={{ padding: '8px', textAlign: 'right', fontWeight: '500', borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'normal' }}>
-                    ₹{parseFloat(item.rate || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    {formatCurrency(item.rate)}
                   </td>
                   <td style={{ padding: '8px', textAlign: 'right', fontWeight: '600', borderBottom: '1px solid #cbd5e1', whiteSpace: 'normal' }}>
-                    ₹{parseFloat(item.amount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    {formatCurrency(item.amount)}
                   </td>
                 </tr>
               ))}
               {/* Fill mock empty rows to match paper layout look */}
-              {Array.from({ length: Math.max(0, 2 - parsedItems.length) }).map((_, idx) => (
-                <tr key={`empty-${idx}`} style={{ height: '24px' }}>
-                  <td style={{ borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}></td>
-                  <td style={{ borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}></td>
-                  <td style={{ borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}></td>
-                  <td style={{ borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}></td>
-                  <td style={{ borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}></td>
-                  <td style={{ borderBottom: '1px solid #cbd5e1' }}></td>
-                </tr>
-              ))}
+              {Array.from({ length: Math.max(0, 4 - parsedItems.length) }).map((_, idx) => {
+                const globalIdx = parsedItems.length + idx;
+                return (
+                  <tr key={`empty-${idx}`} style={{ height: '24px', backgroundColor: globalIdx % 2 === 0 ? '#f8fafc' : '#ffffff' }}>
+                    <td style={{ borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}></td>
+                    <td style={{ borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}></td>
+                    <td style={{ borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}></td>
+                    <td style={{ borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}></td>
+                    <td style={{ borderRight: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}></td>
+                    <td style={{ borderBottom: '1px solid #cbd5e1' }}></td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
 
@@ -310,25 +366,43 @@ export default function InvoicePrint({ invoice, onClose }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px' }}>
             
             {/* Left Column: Customer Code and Bank Details */}
-            <div style={{ width: '58%', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <div style={{ fontSize: '0.78rem', color: '#475569' }}>
-                Customer Code: <strong>{invoice.customer_id_seq}</strong>
+            <div style={{ width: '58%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.95em', borderBottom: '1px solid #111', paddingBottom: '3px' }}>
+                <span style={{ color: '#475569', fontWeight: 600 }}>Customer Code:</span>
+                <strong style={{ marginLeft: '8px', color: '#111' }}>{invoice.customer_id_seq}</strong>
               </div>
               
-              {/* Bank Details Box */}
-              <div style={{
-                border: '1px solid #e2e8f0',
-                borderRadius: '4px',
-                padding: '8px 12px',
-                backgroundColor: '#f8fafc',
-                fontSize: '0.75rem',
-                lineHeight: '1.4'
-              }}>
-                <div style={{ fontWeight: '700', color: '#1e293b', marginBottom: '4px' }}>Amigo Webster</div>
-                <p>Bank: <strong>STATE BANK OF INDIA</strong></p>
-                <p>Account Number: <strong>43126406283</strong></p>
-                <p>Branch: <strong>Kilkattalai</strong></p>
-                <p>IFSC Code: <strong>SBIN0016545</strong></p>
+              {/* Bank Details Lines with underlines */}
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9em', marginTop: '4px' }}>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '4px 0', fontWeight: '700', color: '#111', borderBottom: '1px solid #111' }}>Amigo Webster</td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', color: '#333', borderBottom: '1px solid #111' }}>Bank: <strong>STATE BANK OF INDIA</strong></td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', color: '#333', borderBottom: '1px solid #111' }}>Account Number: <strong>43126406283</strong></td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', color: '#333', borderBottom: '1px solid #111' }}>Branch: <strong>Kilkattalai</strong></td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '4px 0', color: '#333', borderBottom: '1px solid #111' }}>IFSC Code: <strong>SBIN0016545</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+
+              {/* Signatures on the left */}
+              <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ borderBottom: '1px solid #111', width: '220px', display: 'flex', justifyContent: 'space-between', fontSize: '0.95em', paddingBottom: '3px' }}>
+                  <span style={{ color: '#475569', fontWeight: 600 }}>Customer :</span>
+                  <span></span>
+                </div>
+                <div style={{ borderBottom: '1px solid #111', width: '220px', display: 'flex', justifyContent: 'space-between', fontSize: '0.95em', paddingBottom: '3px', marginTop: '10px' }}>
+                  <span style={{ color: '#475569', fontWeight: 600 }}>Authorized Signatory</span>
+                  <span></span>
+                </div>
               </div>
             </div>
 
@@ -337,50 +411,56 @@ export default function InvoicePrint({ invoice, onClose }) {
               <table style={{ 
                 width: '100%', 
                 borderCollapse: 'collapse', 
-                fontSize: '0.78rem',
-                lineHeight: '1.5'
+                fontSize: '0.95em',
+                lineHeight: '1.6'
               }}>
                 <tbody>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>Sub Total</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                      ₹{subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <tr style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #cbd5e1' }}>
+                    <td style={{ padding: '4px 8px', color: '#475569', fontWeight: 500 }}>Sub Total</td>
+                    <td style={{ padding: '4px 8px', textAlign: 'right', fontWeight: '600' }}>
+                      {formatCurrency(subTotal)}
                     </td>
                   </tr>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>Discount (0%)</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>₹0.00</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>CGST (0%)</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>₹0.00</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>SGST (0%)</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>₹0.00</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1.5px solid #1e293b' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>IGST ({igstRate}%)</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                      ₹{igstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                    <td style={{ padding: '4px 8px', color: '#475569', fontWeight: 500, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>Discount</span>
+                      <span style={{ fontSize: '0.85em', color: '#64748b' }}>₹ 0</span>
+                    </td>
+                    <td style={{ padding: '4px 8px', textAlign: 'right', fontWeight: '600' }}>
+                      ₹ 0
                     </td>
                   </tr>
-                  <tr style={{ fontSize: '0.92rem' }}>
-                    <td style={{ padding: '6px 0', fontWeight: '800', color: '#2b3e50', whiteSpace: 'nowrap' }}>Grand Total</td>
-                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '800', color: '#2b3e50', whiteSpace: 'nowrap' }}>
-                      ₹{grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <tr style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #cbd5e1' }}>
+                    <td style={{ padding: '4px 8px', color: '#475569', fontWeight: 500, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>CGST</span>
+                      <span style={{ fontSize: '0.85em', color: '#64748b' }}>{cgstRate}%</span>
+                    </td>
+                    <td style={{ padding: '4px 8px', textAlign: 'right', fontWeight: '600' }}>
+                      {formatCurrency(cgstAmount)}
                     </td>
                   </tr>
-                  <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '3px 0', color: '#64748b', fontWeight: 500, whiteSpace: 'nowrap' }}>Advance Paid</td>
-                    <td style={{ padding: '3px 0', textAlign: 'right', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                      ₹{parseFloat(invoice.advance_paid || 0).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #cbd5e1' }}>
+                    <td style={{ padding: '4px 8px', color: '#475569', fontWeight: 500, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>SGST</span>
+                      <span style={{ fontSize: '0.85em', color: '#64748b' }}>{sgstRate}%</span>
+                    </td>
+                    <td style={{ padding: '4px 8px', textAlign: 'right', fontWeight: '600' }}>
+                      {formatCurrency(sgstAmount)}
                     </td>
                   </tr>
-                  <tr style={{ fontSize: '0.92rem', borderTop: '1.5px solid #1e293b' }}>
-                    <td style={{ padding: '6px 0', fontWeight: '800', color: '#2b3e50', whiteSpace: 'nowrap' }}>Balance Due</td>
-                    <td style={{ padding: '6px 0', textAlign: 'right', fontWeight: '800', color: '#2b3e50', whiteSpace: 'nowrap' }}>
-                      ₹{(grandTotal - parseFloat(invoice.advance_paid || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                  <tr style={{ backgroundColor: '#ffffff', borderBottom: '1.5px solid #1e293b' }}>
+                    <td style={{ padding: '4px 8px', color: '#475569', fontWeight: 500, display: 'flex', justifyContent: 'space-between' }}>
+                      <span>IGST</span>
+                      <span style={{ fontSize: '0.85em', color: '#64748b' }}>{igstRate}%</span>
+                    </td>
+                    <td style={{ padding: '4px 8px', textAlign: 'right', fontWeight: '600' }}>
+                      {formatCurrency(igstAmount)}
+                    </td>
+                  </tr>
+                  <tr style={{ backgroundColor: '#f8fafc', fontSize: '1.1em', fontWeight: '800' }}>
+                    <td style={{ padding: '6px 8px', color: '#2b3e50' }}>Grand Total</td>
+                    <td style={{ padding: '6px 8px', textAlign: 'right', color: '#2b3e50' }}>
+                      {formatCurrency(grandTotal)}
                     </td>
                   </tr>
                 </tbody>
@@ -389,18 +469,19 @@ export default function InvoicePrint({ invoice, onClose }) {
           </div>
 
           {/* Remarks and Signatures section */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginTop: '20px', alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginTop: '24px', alignItems: 'flex-end' }}>
             
             {/* Remarks Box */}
             <div style={{ width: '58%' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b', marginBottom: '2px' }}>Remarks / Declaration</div>
+              <div style={{ fontSize: '0.85em', fontWeight: '700', color: '#475569', marginBottom: '4px' }}>Remarks / Declaration</div>
               <div style={{
-                border: '1px solid #cbd5e1',
-                borderRadius: '4px',
-                height: '60px',
-                padding: '6px',
-                fontSize: '0.7rem',
-                color: '#475569'
+                border: '1.5px solid #2b3e50',
+                borderRadius: '2px',
+                height: '75px',
+                padding: '8px',
+                fontSize: '0.8em',
+                color: '#333',
+                lineHeight: '1.4'
               }}>
                 1. Please remit payments within 15 days of invoice date.
                 <br />
@@ -410,14 +491,23 @@ export default function InvoicePrint({ invoice, onClose }) {
 
             {/* Authorised Signatures */}
             <div style={{ width: '38%', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1e293b', marginBottom: '24px' }}>
-                For Amigowebster
+              <div style={{ fontSize: '0.95em', fontWeight: 700, color: '#111', marginBottom: '4px' }}>
+                For Amigo Webster
               </div>
-              <div style={{ borderBottom: '1px solid #94a3b8', width: '130px', marginBottom: '4px' }}></div>
-              <div style={{ fontSize: '0.75rem', fontWeight: '600', color: '#1e293b' }}>
+              
+              {/* Signature Graphic SVG */}
+              <div style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px 0' }}>
+                <svg width="100" height="36" viewBox="0 0 100 36" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M 10 20 Q 20 5, 30 25 T 50 10 T 70 25 T 90 15" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M 25 10 Q 35 30, 45 10" fill="none" stroke="#2563eb" strokeWidth="1.5" strokeLinecap="round" />
+                </svg>
+              </div>
+
+              <div style={{ borderBottom: '1px solid #111', width: '150px', marginBottom: '4px' }}></div>
+              <div style={{ fontSize: '0.9em', fontWeight: '700', color: '#111' }}>
                 Balaji
               </div>
-              <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
+              <div style={{ fontSize: '0.8em', color: '#555' }}>
                 Managing Director
               </div>
             </div>

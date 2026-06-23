@@ -329,7 +329,7 @@ app.delete('/api/services/:id', async (req, res) => {
 app.get('/api/invoices', async (req, res) => {
   try {
     const invoices = await db.query(`
-      SELECT i.*, c.mobile_number, c.email, c.city, c.pincode, c.address, c.assigned_lead 
+      SELECT i.*, c.mobile_number, c.email, c.city, c.pincode, c.address, c.assigned_lead, c.project_brief 
       FROM invoices i
       LEFT JOIN customers c ON i.customer_id_seq = c.customer_id_seq 
       ORDER BY i.id DESC
