@@ -291,21 +291,6 @@ export default function InvoicePrint({ invoice, onClose }) {
             </div>
           </div>
 
-          {/* Service scope message */}
-          <div style={{ 
-            fontSize: '1em', 
-            color: '#111', 
-            marginBottom: '14px', 
-            padding: '4px 0',
-            lineHeight: '1.4'
-          }}>
-            Towards the charges of Design and Development
-            <br />
-            <strong style={{ color: '#111', fontSize: '1.05em' }}>
-              {invoice.project_brief || invoice.service_name || 'Aumne AI - Collateral'}
-            </strong>
-          </div>
-
           {/* Description Itemized Table */}
           <table style={{ 
             width: '100%', 
@@ -361,6 +346,22 @@ export default function InvoicePrint({ invoice, onClose }) {
               })}
             </tbody>
           </table>
+
+          {/* Service scope message */}
+          <div style={{ 
+            fontSize: '1em', 
+            color: '#111', 
+            marginTop: '14px',
+            marginBottom: '14px', 
+            padding: '4px 0',
+            lineHeight: '1.4'
+          }}>
+            Towards the charges of Design and Development
+            <br />
+            <strong style={{ color: '#111', fontSize: '1.05em' }}>
+              {invoice.project_brief || invoice.service_name || 'Aumne AI - Collateral'}
+            </strong>
+          </div>
 
           {/* Footer Grid - Banks and Totals */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px' }}>
@@ -490,11 +491,7 @@ export default function InvoicePrint({ invoice, onClose }) {
             </div>
 
             {/* Authorised Signatures */}
-            <div style={{ width: '38%', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ fontSize: '0.95em', fontWeight: 700, color: '#111', marginBottom: '4px' }}>
-                For Amigo Webster
-              </div>
-              
+            <div style={{ width: '38%', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
               {/* Signature Graphic SVG */}
               <div style={{ height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '4px 0' }}>
                 <svg width="100" height="36" viewBox="0 0 100 36" xmlns="http://www.w3.org/2000/svg">
@@ -504,12 +501,6 @@ export default function InvoicePrint({ invoice, onClose }) {
               </div>
 
               <div style={{ borderBottom: '1px solid #111', width: '150px', marginBottom: '4px' }}></div>
-              <div style={{ fontSize: '0.9em', fontWeight: '700', color: '#111' }}>
-                Balaji
-              </div>
-              <div style={{ fontSize: '0.8em', color: '#555' }}>
-                Managing Director
-              </div>
             </div>
           </div>
         </div>
