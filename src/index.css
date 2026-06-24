@@ -662,6 +662,16 @@ tr:hover td {
     overflow: visible !important;
     font-size: 8px !important;
   }
+  
+  .printable-invoice,
+  .printable-invoice *,
+  .printable-invoice table,
+  .printable-invoice tr,
+  .printable-invoice th,
+  .printable-invoice td,
+  .printable-invoice div {
+    border-color: #cbd5e1 !important;
+  }
 }
 
 /* Animations */
