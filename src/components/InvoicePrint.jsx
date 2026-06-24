@@ -153,7 +153,7 @@ export default function InvoicePrint({ invoice, onClose }) {
                 color: '#ffffff',
                 padding: '4px 16px',
                 fontWeight: '700',
-                fontSize: '1.1em',
+                fontSize: '1.25em',
                 letterSpacing: '1px',
                 width: '150px',
                 textAlign: 'center',
@@ -162,12 +162,12 @@ export default function InvoicePrint({ invoice, onClose }) {
               }}>
                 INVOICE
               </div>
-              <h2 style={{ fontSize: '1.3em', fontWeight: 800, color: '#111', lineHeight: '1.2', marginBottom: '2px', fontFamily: "'Outfit', sans-serif" }}>
+              <h2 style={{ fontSize: '1.75em', fontWeight: 800, color: '#111', lineHeight: '1.2', marginBottom: '4px', fontFamily: "'Outfit', sans-serif" }}>
                 Amigo Webster
               </h2>
-              <div style={{ color: '#333', fontSize: '0.92em', lineHeight: '1.3' }}>
+              <div style={{ color: '#333', fontSize: '1.2em', lineHeight: '1.45' }}>
                 <p>Plot No 6 Anna Main Road Vengambakkam,</p>
-                <p>Chennai - 600129</p>
+                <p>Chennai - 600128</p>
                 <p style={{ marginTop: '1px' }}>Mob: 9445332233</p>
                 <p>Email: balaji@amigowebster.com</p>
               </div>
@@ -494,7 +494,7 @@ export default function InvoicePrint({ invoice, onClose }) {
 
             {/* Authorised Signatures */}
             <div style={{ width: '38%', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end' }}>
-              <div style={{ fontSize: '0.92em', fontWeight: 700, color: '#111', marginBottom: '4px' }}>
+              <div style={{ fontSize: '1.3em', fontWeight: 700, color: '#111', marginBottom: '4px' }}>
                 For Amigo Webster
               </div>
 
@@ -502,7 +502,7 @@ export default function InvoicePrint({ invoice, onClose }) {
               <div style={{ height: '30px' }}></div>
 
               <div style={{ borderBottom: '1.5px solid #cbd5e1', width: '150px', marginBottom: '4px' }}></div>
-              <div style={{ fontSize: '0.88em', fontWeight: '700', color: '#111' }}>
+              <div style={{ fontSize: '1.2em', fontWeight: '700', color: '#111' }}>
                 Proprietor
               </div>
             </div>
