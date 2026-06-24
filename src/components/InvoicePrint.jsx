@@ -300,12 +300,12 @@ export default function InvoicePrint({ invoice, onClose }) {
           }}>
             <thead>
               <tr style={{ backgroundColor: '#3b4b5a', color: '#ffffff' }}>
-                <th style={{ padding: '6px 4px', fontSize: '0.92em', fontWeight: '700', textAlign: 'center', border: '1px solid #cbd5e1', width: '8%', whiteSpace: 'normal' }}>S. No</th>
-                <th style={{ padding: '6px 4px', fontSize: '0.92em', fontWeight: '700', textAlign: 'left', border: '1px solid #cbd5e1', width: '52%', whiteSpace: 'normal' }}>DESCRIPTION OF ITEMS</th>
-                <th style={{ padding: '6px 4px', fontSize: '0.92em', fontWeight: '700', textAlign: 'center', border: '1px solid #cbd5e1', width: '12%', whiteSpace: 'normal' }}>HSN / SAC</th>
-                <th style={{ padding: '6px 4px', fontSize: '0.92em', fontWeight: '700', textAlign: 'center', border: '1px solid #cbd5e1', width: '8%', whiteSpace: 'normal' }}>QTY</th>
-                <th style={{ padding: '6px 4px', fontSize: '0.92em', fontWeight: '700', textAlign: 'right', border: '1px solid #cbd5e1', width: '10%', whiteSpace: 'normal' }}>PRICE</th>
-                <th style={{ padding: '6px 4px', fontSize: '0.92em', fontWeight: '700', textAlign: 'right', border: '1px solid #cbd5e1', width: '10%', whiteSpace: 'normal' }}>Amount</th>
+                <th style={{ padding: '6px 4px', fontSize: '11px', fontWeight: '700', textAlign: 'center', border: '1px solid #cbd5e1', width: '8%', whiteSpace: 'normal' }}>S. NO</th>
+                <th style={{ padding: '6px 4px', fontSize: '11px', fontWeight: '700', textAlign: 'left', border: '1px solid #cbd5e1', width: '52%', whiteSpace: 'normal' }}>DESCRIPTION OF ITEMS</th>
+                <th style={{ padding: '6px 4px', fontSize: '11px', fontWeight: '700', textAlign: 'center', border: '1px solid #cbd5e1', width: '12%', whiteSpace: 'normal' }}>HSN / SAC</th>
+                <th style={{ padding: '6px 4px', fontSize: '11px', fontWeight: '700', textAlign: 'center', border: '1px solid #cbd5e1', width: '8%', whiteSpace: 'normal' }}>QTY</th>
+                <th style={{ padding: '6px 4px', fontSize: '11px', fontWeight: '700', textAlign: 'right', border: '1px solid #cbd5e1', width: '10%', whiteSpace: 'normal' }}>PRICE</th>
+                <th style={{ padding: '6px 4px', fontSize: '11px', fontWeight: '700', textAlign: 'right', border: '1px solid #cbd5e1', width: '10%', whiteSpace: 'normal' }}>AMOUNT</th>
               </tr>
             </thead>
             <tbody>
