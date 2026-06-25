@@ -663,6 +663,13 @@ tr:hover td {
     font-size: 8px !important;
   }
   
+  .printable-invoice {
+    min-height: 255mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+  }
+
   .printable-invoice,
   .printable-invoice *,
   .printable-invoice table,

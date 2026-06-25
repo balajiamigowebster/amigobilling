@@ -143,6 +143,7 @@ export default function InvoicePrint({ invoice, onClose }) {
           fontSize: '8px',
           lineHeight: '1.3'
         }}>
+          <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
           
           {/* Header Grid */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -368,36 +369,15 @@ export default function InvoicePrint({ invoice, onClose }) {
           {/* Footer Grid - Banks and Totals */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
             
-            {/* Left Column: Customer Code and Bank Details */}
-            <div style={{ width: '58%', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {/* Left Column: Customer Code and Signatures */}
+            <div style={{ width: '58%', display: 'flex', flexDirection: 'column', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', fontSize: '0.92em', borderBottom: '1px solid #cbd5e1', paddingBottom: '2px' }}>
                 <span style={{ color: '#475569', fontWeight: 600 }}>Customer Code:</span>
                 <strong style={{ marginLeft: '8px', color: '#111' }}>{invoice.customer_id_seq}</strong>
               </div>
-              
-              {/* Bank Details Lines with underlines */}
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88em', marginTop: '2px' }}>
-                <tbody>
-                  <tr>
-                    <td style={{ padding: '2px 0', fontWeight: '700', color: '#111', borderBottom: '1px solid #cbd5e1' }}>Amigo Webster</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '2px 0', color: '#333', borderBottom: '1px solid #cbd5e1' }}>Bank: <strong>STATE BANK OF INDIA</strong></td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '2px 0', color: '#333', borderBottom: '1px solid #cbd5e1' }}>Account Number: <strong>43126406283</strong></td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '2px 0', color: '#333', borderBottom: '1px solid #cbd5e1' }}>Branch: <strong>Kilkattalai</strong></td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '2px 0', color: '#333', borderBottom: '1px solid #cbd5e1' }}>IFSC Code: <strong>SBIN0016545</strong></td>
-                  </tr>
-                </tbody>
-              </table>
 
               {/* Signatures on the left */}
-              <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <div style={{ borderBottom: '1px solid #cbd5e1', width: '200px', display: 'flex', justifyContent: 'space-between', fontSize: '0.92em', paddingBottom: '2px' }}>
                   <span style={{ color: '#475569', fontWeight: 600 }}>Customer :</span>
                   <span></span>
@@ -506,6 +486,37 @@ export default function InvoicePrint({ invoice, onClose }) {
                 Proprietor
               </div>
             </div>
+          </div>
+
+          {/* Bank Details at the very bottom of the A4 page */}
+          <div style={{ 
+            marginTop: '16px', 
+            borderTop: '1px solid #cbd5e1', 
+            paddingTop: '8px'
+          }}>
+            <div style={{ fontWeight: '700', fontSize: '0.92em', color: '#111', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Bank Account Details (For Remittance / Wire Transfer)
+            </div>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88em' }}>
+              <tbody>
+                <tr>
+                  <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600, width: '15%' }}>Account Name:</td>
+                  <td style={{ padding: '2px 0', color: '#111', fontWeight: 700, width: '35%' }}>Amigo Webster</td>
+                  <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600, width: '15%' }}>Bank Name:</td>
+                  <td style={{ padding: '2px 0', color: '#111', fontWeight: 700, width: '35%' }}>STATE BANK OF INDIA</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600 }}>Account Number:</td>
+                  <td style={{ padding: '2px 0', color: '#111', fontWeight: 700 }}>43126406283</td>
+                  <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600 }}>IFSC Code:</td>
+                  <td style={{ padding: '2px 0', color: '#111', fontWeight: 700 }}>SBIN0016545</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600 }}>Branch Name:</td>
+                  <td style={{ padding: '2px 0', color: '#111', fontWeight: 700 }} colSpan={3}>Kilkattalai</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
