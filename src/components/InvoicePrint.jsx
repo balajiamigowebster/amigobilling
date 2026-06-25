@@ -487,6 +487,7 @@ export default function InvoicePrint({ invoice, onClose }) {
               </div>
             </div>
           </div>
+          </div>
 
           {/* Bank Details at the very bottom of the A4 page */}
           <div style={{ 
