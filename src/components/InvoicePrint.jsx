@@ -234,12 +234,14 @@ export default function InvoicePrint({ invoice, onClose }) {
                       {getStateFromCity(invoice.city)}
                     </td>
                   </tr>
-                  <tr>
-                    <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600 }}>GST</td>
-                    <td style={{ padding: '2px 0 2px 4px', color: '#333', borderBottom: '1px solid #cbd5e1' }}>
-                      {invoice.gst_no || '29ABQCS5582H1ZJ'}
-                    </td>
-                  </tr>
+                  {invoice.gst_no && invoice.gst_no.trim() !== '' && (
+                    <tr>
+                      <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600 }}>GST</td>
+                      <td style={{ padding: '2px 0 2px 4px', color: '#333', borderBottom: '1px solid #cbd5e1' }}>
+                        {invoice.gst_no}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
