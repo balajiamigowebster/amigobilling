@@ -14,10 +14,10 @@ export default function Login({ onLoginSuccess }) {
     setError('');
     
     setTimeout(() => {
-      if (username.trim().toLowerCase() === 'admin' && password === 'password123') {
+      if (username.trim().toLowerCase() === 'admin' && password === 'Balaji@123') {
         onLoginSuccess({ username: 'Admin', initials: 'AD' });
       } else {
-        setError('Invalid username or password. (Use admin / password123)');
+        setError('Invalid username or password. (Use admin / Balaji@123)');
         setLoading(false);
       }
     }, 800); // Simulate login verification animation
