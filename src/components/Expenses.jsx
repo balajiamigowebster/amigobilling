@@ -29,7 +29,9 @@ export default function Expenses({ showToast }) {
     try {
       const res = await fetch(`${API_URL}/api/expenses`);
       const data = await res.json();
-      setExpenses(data);
+      if (res.ok && Array.isArray(data)) {
+        setExpenses(data);
+      }
     } catch (err) {
       console.error('Error fetching expenses:', err);
     }
@@ -39,9 +41,11 @@ export default function Expenses({ showToast }) {
     try {
       const res = await fetch(`${API_URL}/api/employees`);
       const data = await res.json();
-      setEmployees(data);
-      if (data.length > 0) {
-        setForm(f => ({ ...f, employeeId: data[0].id.toString() }));
+      if (res.ok && Array.isArray(data)) {
+        setEmployees(data);
+        if (data.length > 0) {
+          setForm(f => ({ ...f, employeeId: data[0].id.toString() }));
+        }
       }
     } catch (err) {
       console.error('Error fetching employees:', err);

@@ -32,7 +32,9 @@ export default function Services({ onNavigate, showToast }) {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/services`);
       const data = await res.json();
-      setServices(data);
+      if (res.ok && Array.isArray(data)) {
+        setServices(data);
+      }
     } catch (err) {
       console.error('Error fetching services:', err);
     } finally {

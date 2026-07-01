@@ -38,7 +38,9 @@ export default function Meetings({ onNavigate, showToast }) {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/meetings?date=${selectedDate}`);
       const data = await res.json();
-      setMeetings(data);
+      if (res.ok && Array.isArray(data)) {
+        setMeetings(data);
+      }
     } catch (err) {
       console.error('Error fetching meetings:', err);
     } finally {
@@ -50,16 +52,20 @@ export default function Meetings({ onNavigate, showToast }) {
     try {
       const custRes = await fetch(`${API_URL}/api/customers`);
       const custData = await custRes.json();
-      setCustomers(custData);
+      if (custRes.ok && Array.isArray(custData)) {
+        setCustomers(custData);
+      }
 
       const leadRes = await fetch(`${API_URL}/api/leads`);
       const leadData = await leadRes.json();
-      setLeads(leadData);
+      if (leadRes.ok && Array.isArray(leadData)) {
+        setLeads(leadData);
+      }
 
-      if (custData.length > 0) {
+      if (custRes.ok && Array.isArray(custData) && custData.length > 0) {
         setForm(f => ({ ...f, customerId: custData[0].id }));
       }
-      if (leadData.length > 0) {
+      if (leadRes.ok && Array.isArray(leadData) && leadData.length > 0) {
         setForm(f => ({ ...f, leadName: leadData[0].lead_name }));
       }
     } catch (err) {

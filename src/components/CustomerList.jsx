@@ -39,7 +39,9 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
     try {
       const res = await fetch(`${API_URL}/api/customers`);
       const data = await res.json();
-      setCustomers(data);
+      if (res.ok && Array.isArray(data)) {
+        setCustomers(data);
+      }
     } catch (err) {
       console.error('Error fetching customers:', err);
     }
@@ -49,9 +51,11 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
     try {
       const res = await fetch(`${API_URL}/api/leads`);
       const data = await res.json();
-      setLeads(data);
-      if (data.length > 0) {
-        setForm(f => ({ ...f, assignedLead: data[0].lead_name }));
+      if (res.ok && Array.isArray(data)) {
+        setLeads(data);
+        if (data.length > 0) {
+          setForm(f => ({ ...f, assignedLead: data[0].lead_name }));
+        }
       }
     } catch (err) {
       console.error('Error fetching leads:', err);

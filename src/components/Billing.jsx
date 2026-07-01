@@ -53,7 +53,9 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
       setLoading(true);
       const res = await fetch(`${API_URL}/api/invoices`);
       const data = await res.json();
-      setInvoices(data);
+      if (res.ok && Array.isArray(data)) {
+        setInvoices(data);
+      }
     } catch (err) {
       console.error('Error fetching invoices:', err);
     } finally {
@@ -65,17 +67,21 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
     try {
       const custRes = await fetch(`${API_URL}/api/customers`);
       const custData = await custRes.json();
-      setCustomers(custData);
+      if (custRes.ok && Array.isArray(custData)) {
+        setCustomers(custData);
+      }
 
       const servRes = await fetch(`${API_URL}/api/services`);
       const servData = await servRes.json();
-      setServices(servData);
+      if (servRes.ok && Array.isArray(servData)) {
+        setServices(servData);
+      }
       
-      if (custData.length > 0) {
+      if (custRes.ok && Array.isArray(custData) && custData.length > 0) {
         setForm(f => ({ ...f, patientId: custData[0].id }));
       }
       
-      if (servData.length > 0) {
+      if (servRes.ok && Array.isArray(servData) && servData.length > 0) {
         setItems([
           { title: servData[0].service_name, description: '', rate: servData[0].cost.toString(), qty: 1, amount: servData[0].cost }
         ]);

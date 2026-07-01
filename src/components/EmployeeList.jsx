@@ -26,7 +26,9 @@ export default function EmployeeList({ showToast }) {
     try {
       const res = await fetch(`${API_URL}/api/employees`);
       const data = await res.json();
-      setEmployees(data);
+      if (res.ok && Array.isArray(data)) {
+        setEmployees(data);
+      }
     } catch (err) {
       console.error('Error fetching employees:', err);
     }

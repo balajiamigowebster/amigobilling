@@ -9,7 +9,6 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hoveredIndex, setHoveredIndex] = useState(null);
-
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -18,23 +17,31 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
         // 1. Fetch Customers
         const custRes = await fetch(`${API_URL}/api/customers`);
         const custData = await custRes.json();
-        setCustomers(custData);
+        if (custRes.ok && Array.isArray(custData)) {
+          setCustomers(custData);
+        }
 
         // 2. Fetch Invoices
         const invoicesRes = await fetch(`${API_URL}/api/invoices`);
         const invoicesData = await invoicesRes.json();
-        setInvoices(invoicesData);
+        if (invoicesRes.ok && Array.isArray(invoicesData)) {
+          setInvoices(invoicesData);
+        }
 
         // 3. Fetch Services
         const servicesRes = await fetch(`${API_URL}/api/services`);
         const servicesData = await servicesRes.json();
-        setServices(servicesData);
+        if (servicesRes.ok && Array.isArray(servicesData)) {
+          setServices(servicesData);
+        }
 
         // 4. Fetch Today's Meetings
-        const today = new Date().toLocaleDateString('sv');
-        const meetRes = await fetch(`${API_URL}/api/meetings?date=${today}`);
+        const todayStr = new Date().toLocaleDateString('sv');
+        const meetRes = await fetch(`${API_URL}/api/meetings?date=${todayStr}`);
         const meetData = await meetRes.json();
-        setMeetings(meetData);
+        if (meetRes.ok && Array.isArray(meetData)) {
+          setMeetings(meetData);
+        }
 
       } catch (err) {
         console.error("Error loading dashboard data:", err);
