@@ -481,6 +481,151 @@ app.get('/api/download-db', (req, res) => {
   });
 });
 
+// ================= EMPLOYEE ROUTES =================
+
+// Get all employees (including total salary paid)
+app.get('/api/employees', async (req, res) => {
+  try {
+    const employees = await db.query(`
+      SELECT e.*, COALESCE(SUM(ex.amount), 0) as total_paid
+      FROM employees e
+      LEFT JOIN expenses ex ON e.id = ex.employee_id AND ex.category = 'Salary'
+      GROUP BY e.id
+      ORDER BY e.employee_name ASC
+    `);
+    res.json(employees);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch employees.' });
+  }
+});
+
+// Add an employee
+app.post('/api/employees', async (req, res) => {
+  const { employeeName, phoneNumber, address, salary } = req.body;
+  if (!employeeName || !phoneNumber || !address || !salary) {
+    return res.status(400).json({ error: 'All fields are required.' });
+  }
+  try {
+    await db.query(
+      'INSERT INTO employees (employee_name, phone_number, address, salary) VALUES (?, ?, ?, ?)',
+      [employeeName, phoneNumber, address, parseFloat(salary)]
+    );
+    res.status(201).json({ message: 'Employee added successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to add employee.' });
+  }
+});
+
+// Update employee
+const updateEmployee = async (req, res) => {
+  const { id } = req.params;
+  const { employeeName, phoneNumber, address, salary } = req.body;
+  if (!employeeName || !phoneNumber || !address || !salary) {
+    return res.status(400).json({ error: 'All fields are required.' });
+  }
+  try {
+    await db.query(
+      'UPDATE employees SET employee_name = ?, phone_number = ?, address = ?, salary = ? WHERE id = ?',
+      [employeeName, phoneNumber, address, parseFloat(salary), id]
+    );
+    res.json({ message: 'Employee updated successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update employee.' });
+  }
+};
+app.put('/api/employees/:id', updateEmployee);
+app.post('/api/employees/:id/update', updateEmployee);
+
+// Delete employee
+const deleteEmployee = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM employees WHERE id = ?', [id]);
+    res.json({ message: 'Employee deleted successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete employee.' });
+  }
+};
+app.delete('/api/employees/:id', deleteEmployee);
+app.post('/api/employees/:id/delete', deleteEmployee);
+
+
+// ================= EXPENSE ROUTES =================
+
+// Get all expenses
+app.get('/api/expenses', async (req, res) => {
+  try {
+    const expenses = await db.query(`
+      SELECT ex.*, e.employee_name
+      FROM expenses ex
+      LEFT JOIN employees e ON ex.employee_id = e.id
+      ORDER BY ex.expense_date DESC, ex.id DESC
+    `);
+    res.json(expenses);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch expenses.' });
+  }
+});
+
+// Add an expense
+app.post('/api/expenses', async (req, res) => {
+  const { expenseName, category, amount, expenseDate, employeeId } = req.body;
+  if (!expenseName || !category || !amount || !expenseDate) {
+    return res.status(400).json({ error: 'All fields except employee are required.' });
+  }
+  try {
+    await db.query(
+      'INSERT INTO expenses (expense_name, category, amount, expense_date, employee_id) VALUES (?, ?, ?, ?, ?)',
+      [expenseName, category, parseFloat(amount), expenseDate, employeeId ? parseInt(employeeId) : null]
+    );
+    res.status(201).json({ message: 'Expense logged successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to log expense.' });
+  }
+});
+
+// Update expense
+const updateExpense = async (req, res) => {
+  const { id } = req.params;
+  const { expenseName, category, amount, expenseDate, employeeId } = req.body;
+  if (!expenseName || !category || !amount || !expenseDate) {
+    return res.status(400).json({ error: 'All fields except employee are required.' });
+  }
+  try {
+    await db.query(
+      'UPDATE expenses SET expense_name = ?, category = ?, amount = ?, expense_date = ?, employee_id = ? WHERE id = ?',
+      [expenseName, category, parseFloat(amount), expenseDate, employeeId ? parseInt(employeeId) : null, id]
+    );
+    res.json({ message: 'Expense updated successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update expense.' });
+  }
+};
+app.put('/api/expenses/:id', updateExpense);
+app.post('/api/expenses/:id/update', updateExpense);
+
+// Delete expense
+const deleteExpense = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM expenses WHERE id = ?', [id]);
+    res.json({ message: 'Expense deleted successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete expense.' });
+  }
+};
+app.delete('/api/expenses/:id', deleteExpense);
+app.post('/api/expenses/:id/delete', deleteExpense);
+
+
 // ================= GLOBAL ERROR HANDLING =================
 app.use((err, req, res, next) => {
   console.error(err.stack);

@@ -214,6 +214,56 @@ async function createTables() {
     `, [items1, today, items2, today, items3, today]);
     console.log('Seeded initial agency invoices data.');
   }
+
+  // 6. Employees table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS employees (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      employee_name VARCHAR(100) NOT NULL,
+      phone_number VARCHAR(20) NOT NULL,
+      address TEXT NOT NULL,
+      salary DECIMAL(10, 2) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // Seed employees
+  const [empCount] = await pool.query('SELECT COUNT(*) as count FROM employees');
+  if (empCount[0].count === 0) {
+    await pool.query(`
+      INSERT INTO employees (employee_name, phone_number, address, salary) VALUES 
+      ('Rajesh Kumar', '+91 98765 43210', '12, MG Road, Bangalore', 35000.00),
+      ('Ananya Sen', '+91 87654 32109', '45, Indiranagar, Bangalore', 42000.00)
+    `);
+    console.log('Seeded initial employees data.');
+  }
+
+  // 7. Expenses table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS expenses (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      expense_name VARCHAR(150) NOT NULL,
+      category VARCHAR(50) NOT NULL,
+      amount DECIMAL(10, 2) NOT NULL,
+      expense_date DATE NOT NULL,
+      employee_id INT DEFAULT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // Seed expenses
+  const [expCount] = await pool.query('SELECT COUNT(*) as count FROM expenses');
+  if (expCount[0].count === 0) {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    await pool.query(`
+      INSERT INTO expenses (expense_name, category, amount, expense_date, employee_id) VALUES 
+      ('Paid Rajesh Kumar June Salary', 'Salary', 35000.00, ?, 1),
+      ('Google Search Ads - June Campaign', 'Ads', 15000.00, ?, NULL),
+      ('Office Rent - June', 'Rent', 25000.00, ?, NULL)
+    `, [todayStr, todayStr, todayStr]);
+    console.log('Seeded initial expenses data.');
+  }
 }
 
 // Wrapper for query execution

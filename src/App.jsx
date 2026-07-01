@@ -7,6 +7,8 @@ import Services from './components/Services';
 import Billing from './components/Billing';
 import InvoicePrint from './components/InvoicePrint';
 import Login from './components/Login';
+import EmployeeList from './components/EmployeeList';
+import Expenses from './components/Expenses';
 import { Sparkles, FileText, CheckCircle, AlertCircle, Trash2, Printer, Code, Menu } from 'lucide-react';
 import './App.css';
 
@@ -93,6 +95,10 @@ export default function App() {
         );
       case 'proposals':
         return <ProposalsTab showToast={showToast} />;
+      case 'employees':
+        return <EmployeeList showToast={showToast} />;
+      case 'expenses':
+        return <Expenses showToast={showToast} />;
       case 'reports':
         return <ReportsTab />;
       default:

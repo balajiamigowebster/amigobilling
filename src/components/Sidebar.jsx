@@ -10,7 +10,9 @@ import {
   ChevronLeft, 
   ChevronRight, 
   LogOut,
-  Sparkles
+  Sparkles,
+  UserCheck,
+  Receipt
 } from 'lucide-react';
 
 export default function Sidebar({ 
@@ -30,6 +32,8 @@ export default function Sidebar({
     { id: 'services', label: 'Services', icon: Code },
     { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'proposals', label: 'Proposals', icon: Briefcase },
+    { id: 'employees', label: 'Employees', icon: UserCheck },
+    { id: 'expenses', label: 'Expenses', icon: Receipt },
     { id: 'reports', label: 'Reports', icon: TrendingUp },
   ];
 
