@@ -73,7 +73,7 @@ export default function Meetings({ onNavigate, showToast }) {
       meetingDate: selectedDate,
       meetingTime: '10:00 AM',
       agenda: '',
-      leadName: leads.length > 0 ? leads[0].lead_name : 'Arjun Sharma'
+      leadName: leads.length > 0 ? leads[0].lead_name : 'Balaji Nagarajan'
     });
     setFormError('');
     setShowBookModal(true);

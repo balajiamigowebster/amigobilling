@@ -64,7 +64,7 @@ async function createTables() {
   if (leadsCount[0].count === 0) {
     await pool.query(`
       INSERT INTO leads (lead_name, role) VALUES 
-      ('Arjun Sharma', 'Project Manager'),
+      ('Balaji Nagarajan', 'Project Director'),
       ('Priya Patel', 'Tech Lead Developer'),
       ('Rajesh Varma', 'Digital Marketing Director')
     `);
@@ -82,7 +82,7 @@ async function createTables() {
       pincode VARCHAR(10),
       city VARCHAR(50),
       address TEXT,
-      assigned_lead VARCHAR(100) DEFAULT 'Arjun Sharma',
+      assigned_lead VARCHAR(100) DEFAULT 'Balaji Nagarajan',
       project_brief TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -93,7 +93,7 @@ async function createTables() {
   if (custCount[0].count === 0) {
     await pool.query(`
       INSERT INTO customers (customer_id_seq, customer_name, mobile_number, email, city, project_brief, assigned_lead) VALUES 
-      ('C-101', 'Karan Johar', '9876543210', 'karan@dharma.com', 'Mumbai', 'E-commerce platform with Stripe payment gateway integration.', 'Arjun Sharma'),
+      ('C-101', 'Karan Johar', '9876543210', 'karan@dharma.com', 'Mumbai', 'E-commerce platform with Stripe payment gateway integration.', 'Balaji Nagarajan'),
       ('C-102', 'Simran Kaur', '8765432109', 'simran@bakery.com', 'Delhi', 'SEO audit and Google search rankings optimization campaign.', 'Priya Patel'),
       ('C-103', 'Rahul Sharma', '7654321098', 'rahul@sharmatech.com', 'Bangalore', 'Full social media marketing handling and weekly PPC ad ads.', 'Rajesh Varma')
     `);
@@ -145,7 +145,7 @@ async function createTables() {
     const today = new Date().toISOString().slice(0, 10);
     await pool.query(`
       INSERT INTO meetings (customer_id, meeting_date, meeting_time, agenda, lead_name) VALUES 
-      (1, ?, '10:00 AM', 'Initial design brief & payment terms setup', 'Arjun Sharma'),
+      (1, ?, '10:00 AM', 'Initial design brief & payment terms setup', 'Balaji Nagarajan'),
       (2, ?, '11:30 AM', 'Review keyword reports and site indexing blockers', 'Priya Patel'),
       (3, ?, '02:00 PM', 'Consultation on Instagram ads and campaign ROI', 'Rajesh Varma')
     `, [today, today, today]);

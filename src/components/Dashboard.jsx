@@ -184,7 +184,7 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   return (
     <div>
       <div style={{ marginBottom: '32px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>Welcome Back, Arjun</h1>
+        <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>Welcome Back, Balaji Nagarajan</h1>
         <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Here is the summary of your digital agency operations today.</p>
       </div>
 

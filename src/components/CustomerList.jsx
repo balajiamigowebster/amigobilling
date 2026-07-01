@@ -67,7 +67,7 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
       pincode: '',
       city: '',
       address: '',
-      assignedLead: leads.length > 0 ? leads[0].lead_name : 'Arjun Sharma',
+      assignedLead: leads.length > 0 ? leads[0].lead_name : 'Balaji Nagarajan',
       projectBrief: ''
     });
     setFormError('');
@@ -93,7 +93,7 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
       pincode: customer.pincode || '',
       city: customer.city || '',
       address: customer.address || '',
-      assignedLead: customer.assigned_lead || 'Arjun Sharma',
+      assignedLead: customer.assigned_lead || 'Balaji Nagarajan',
       projectBrief: customer.project_brief || ''
     });
     setFormError('');

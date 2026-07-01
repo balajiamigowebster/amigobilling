@@ -119,7 +119,7 @@ app.post('/api/customers', async (req, res) => {
       `INSERT INTO customers 
       (customer_id_seq, customer_name, mobile_number, email, pincode, city, address, assigned_lead, project_brief) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [seqId, customerName, mobileNumber, email || null, pincode || null, city || null, address || null, assignedLead || 'Arjun Sharma', projectBrief || null]
+      [seqId, customerName, mobileNumber, email || null, pincode || null, city || null, address || null, assignedLead || 'Balaji Nagarajan', projectBrief || null]
     );
 
     res.status(201).json({ id: result.insertId, customerIdSeq: seqId, message: 'Customer registered successfully.' });
@@ -159,7 +159,7 @@ const updateCustomer = async (req, res) => {
         assigned_lead = ?, 
         project_brief = ? 
       WHERE id = ?`,
-      [customerName, mobileNumber, email || null, pincode || null, city || null, address || null, assignedLead || 'Arjun Sharma', projectBrief || null, id]
+      [customerName, mobileNumber, email || null, pincode || null, city || null, address || null, assignedLead || 'Balaji Nagarajan', projectBrief || null, id]
     );
     res.json({ message: 'Customer updated successfully.' });
   } catch (error) {
@@ -234,7 +234,7 @@ app.post('/api/meetings', async (req, res) => {
   try {
     const result = await db.query(
       'INSERT INTO meetings (customer_id, meeting_date, meeting_time, agenda, lead_name) VALUES (?, ?, ?, ?, ?)',
-      [customerId, meetingDate, meetingTime, agenda, leadName || 'Arjun Sharma']
+      [customerId, meetingDate, meetingTime, agenda, leadName || 'Balaji Nagarajan']
     );
     res.status(201).json({ id: result.insertId, message: 'Meeting scheduled successfully.' });
   } catch (error) {

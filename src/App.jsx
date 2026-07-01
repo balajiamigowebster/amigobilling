@@ -382,7 +382,7 @@ function ProposalsTab({ showToast }) {
           </div>
 
           <div style={{ borderTop: '1px solid #ccc', paddingTop: '12px', marginTop: '40px', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#555' }}>
-            <span>Arjun Sharma (Project Lead)</span>
+            <span>Balaji Nagarajan (Project Director)</span>
             <span>Authorized Signature</span>
           </div>
         </div>

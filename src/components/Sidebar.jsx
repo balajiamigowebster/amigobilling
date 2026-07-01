@@ -86,7 +86,7 @@ export default function Sidebar({
 
       <div className="sidebar-footer">
         <div className="profile-avatar" style={{ backgroundColor: 'var(--primary)', color: '#fff' }}>
-          {doctorInfo.initials || 'AD'}
+          {doctorInfo.initials || 'BN'}
         </div>
         <div className="sidebar-footer-text" style={{ flexGrow: 1, minWidth: 0, paddingLeft: '8px' }}>
           <h4 style={{ 
@@ -96,7 +96,7 @@ export default function Sidebar({
             overflow: 'hidden', 
             textOverflow: 'ellipsis' 
           }}>
-            {doctorInfo.username || 'Arjun Sharma'}
+            {doctorInfo.username || 'Balaji Nagarajan'}
           </h4>
           <p style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Project Director</p>
         </div>
