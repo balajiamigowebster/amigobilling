@@ -21,7 +21,7 @@ export default function App() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('ranga_dental_user');
+    const savedUser = localStorage.getItem('amigo_billing_user_v2');
     if (savedUser) {
       setUser(JSON.parse(savedUser));
     }
@@ -29,13 +29,13 @@ export default function App() {
 
   const handleLoginSuccess = (userData) => {
     setUser(userData);
-    localStorage.setItem('ranga_dental_user', JSON.stringify(userData));
+    localStorage.setItem('amigo_billing_user_v2', JSON.stringify(userData));
     showToast('Logged in successfully!', 'success');
   };
 
   const handleLogout = () => {
     setUser(null);
-    localStorage.removeItem('ranga_dental_user');
+    localStorage.removeItem('amigo_billing_user_v2');
     showToast('Logged out successfully.', 'success');
   };
 
