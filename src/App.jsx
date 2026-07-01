@@ -52,58 +52,64 @@ export default function App() {
 
   // Rendering active tab content
   const renderTabContent = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return (
-          <Dashboard 
-            onNavigate={setActiveTab} 
-            onPrintInvoice={setPrintInvoice} 
-            showToast={showToast} 
-          />
-        );
-      case 'customer-list':
-      case 'customer-registry':
-        return (
-          <CustomerList 
-            onNavigate={setActiveTab}
-            openRegisterModal={activeTab === 'customer-registry'}
-            onCloseRegisterModal={() => setActiveTab('customer-list')}
-            onSaveSuccess={handleSaveSuccess}
-          />
-        );
-      case 'meetings':
-        return (
-          <Meetings 
-            onNavigate={setActiveTab} 
-            showToast={showToast} 
-          />
-        );
-      case 'services':
-        return (
-          <Services 
-            onNavigate={setActiveTab} 
-            showToast={showToast} 
-          />
-        );
-      case 'billing':
-        return (
-          <Billing 
-            onNavigate={setActiveTab} 
-            onPrintInvoice={setPrintInvoice} 
-            showToast={showToast} 
-          />
-        );
-      case 'proposals':
-        return <ProposalsTab showToast={showToast} />;
-      case 'employees':
-        return <EmployeeList showToast={showToast} />;
-      case 'expenses':
-        return <Expenses showToast={showToast} />;
-      case 'reports':
-        return <ReportsTab />;
-      default:
-        return <Dashboard onNavigate={setActiveTab} onPrintInvoice={setPrintInvoice} showToast={showToast} />;
-    }
+    return (
+      <div className="page-enter" key={activeTab}>
+        {(() => {
+          switch (activeTab) {
+            case 'dashboard':
+              return (
+                <Dashboard 
+                  onNavigate={setActiveTab} 
+                  onPrintInvoice={setPrintInvoice} 
+                  showToast={showToast} 
+                />
+              );
+            case 'customer-list':
+            case 'customer-registry':
+              return (
+                <CustomerList 
+                  onNavigate={setActiveTab}
+                  openRegisterModal={activeTab === 'customer-registry'}
+                  onCloseRegisterModal={() => setActiveTab('customer-list')}
+                  onSaveSuccess={handleSaveSuccess}
+                />
+              );
+            case 'meetings':
+              return (
+                <Meetings 
+                  onNavigate={setActiveTab} 
+                  showToast={showToast} 
+                />
+              );
+            case 'services':
+              return (
+                <Services 
+                  onNavigate={setActiveTab} 
+                  showToast={showToast} 
+                />
+              );
+            case 'billing':
+              return (
+                <Billing 
+                  onNavigate={setActiveTab} 
+                  onPrintInvoice={setPrintInvoice} 
+                  showToast={showToast} 
+                />
+              );
+            case 'proposals':
+              return <ProposalsTab showToast={showToast} />;
+            case 'employees':
+              return <EmployeeList showToast={showToast} />;
+            case 'expenses':
+              return <Expenses showToast={showToast} />;
+            case 'reports':
+              return <ReportsTab />;
+            default:
+              return <Dashboard onNavigate={setActiveTab} onPrintInvoice={setPrintInvoice} showToast={showToast} />;
+          }
+        })()}
+      </div>
+    );
   };
 
   if (!user) {
