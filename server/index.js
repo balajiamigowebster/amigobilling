@@ -40,8 +40,10 @@ const checkDbConnection = async (req, res, next) => {
     }
     next();
   } catch (error) {
-    console.error('Database connection failed in middleware:', error.message);
-    res.status(500).json({ error: 'Database connection failed. Please check your cloud database credentials in Vercel environment variables.' });
+    res.status(500).json({ 
+      error: 'Database connection failed.', 
+      details: error.message 
+    });
   }
 };
 app.use(checkDbConnection);
