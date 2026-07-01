@@ -209,8 +209,8 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
 
       let res;
       if (editingInvoice) {
-        res = await fetch(`${API_URL}/api/invoices/${editingInvoice.id}`, {
-          method: 'PUT',
+        res = await fetch(`${API_URL}/api/invoices/${editingInvoice.id}/update`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
         });
@@ -246,8 +246,8 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
     if (!deletingInvoice) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/invoices/${deletingInvoice.id}`, {
-        method: 'DELETE'
+      const res = await fetch(`${API_URL}/api/invoices/${deletingInvoice.id}/delete`, {
+        method: 'POST'
       });
 
       if (!res.ok) {

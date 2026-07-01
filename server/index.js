@@ -130,7 +130,7 @@ app.post('/api/customers', async (req, res) => {
 });
 
 // Update customer details
-app.put('/api/customers/:id', async (req, res) => {
+const updateCustomer = async (req, res) => {
   const { id } = req.params;
   const {
     customerName,
@@ -166,10 +166,12 @@ app.put('/api/customers/:id', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to update customer.' });
   }
-});
+};
+app.put('/api/customers/:id', updateCustomer);
+app.post('/api/customers/:id/update', updateCustomer);
 
 // Delete customer
-app.delete('/api/customers/:id', async (req, res) => {
+const deleteCustomer = async (req, res) => {
   const { id } = req.params;
   try {
     await db.query('DELETE FROM customers WHERE id = ?', [id]);
@@ -178,7 +180,9 @@ app.delete('/api/customers/:id', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to delete customer.' });
   }
-});
+};
+app.delete('/api/customers/:id', deleteCustomer);
+app.post('/api/customers/:id/delete', deleteCustomer);
 
 
 // ================= LEAD ROUTES (PMs) =================
@@ -290,7 +294,7 @@ app.post('/api/services', async (req, res) => {
 });
 
 // Update service
-app.put('/api/services/:id', async (req, res) => {
+const updateService = async (req, res) => {
   const { id } = req.params;
   const { serviceName, cost, timeline } = req.body;
 
@@ -308,10 +312,12 @@ app.put('/api/services/:id', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to update service.' });
   }
-});
+};
+app.put('/api/services/:id', updateService);
+app.post('/api/services/:id/update', updateService);
 
 // Delete service
-app.delete('/api/services/:id', async (req, res) => {
+const deleteService = async (req, res) => {
   const { id } = req.params;
   try {
     await db.query('DELETE FROM services WHERE id = ?', [id]);
@@ -320,7 +326,9 @@ app.delete('/api/services/:id', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to delete service.' });
   }
-});
+};
+app.delete('/api/services/:id', deleteService);
+app.post('/api/services/:id/delete', deleteService);
 
 
 // ================= INVOICE ROUTES =================
@@ -414,7 +422,7 @@ app.post('/api/invoices', async (req, res) => {
 });
 
 // Update invoice
-app.put('/api/invoices/:id', async (req, res) => {
+const updateInvoice = async (req, res) => {
   const { id } = req.params;
   const { items, amount, advancePaid, status, invoiceDate, gstRate } = req.body;
 
@@ -435,10 +443,12 @@ app.put('/api/invoices/:id', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to update invoice.' });
   }
-});
+};
+app.put('/api/invoices/:id', updateInvoice);
+app.post('/api/invoices/:id/update', updateInvoice);
 
 // Delete invoice
-app.delete('/api/invoices/:id', async (req, res) => {
+const deleteInvoice = async (req, res) => {
   const { id } = req.params;
   try {
     await db.query('DELETE FROM invoices WHERE id = ?', [id]);
@@ -447,7 +457,9 @@ app.delete('/api/invoices/:id', async (req, res) => {
     console.error(error);
     res.status(500).json({ error: 'Failed to delete invoice.' });
   }
-});
+};
+app.delete('/api/invoices/:id', deleteInvoice);
+app.post('/api/invoices/:id/delete', deleteInvoice);
 
 // Download database SQL file
 app.get('/api/download-db', (req, res) => {

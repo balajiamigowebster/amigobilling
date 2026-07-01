@@ -126,8 +126,8 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
     try {
       let res;
       if (editingCustomer) {
-        res = await fetch(`${API_URL}/api/customers/${editingCustomer.id}`, {
-          method: 'PUT',
+        res = await fetch(`${API_URL}/api/customers/${editingCustomer.id}/update`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(form)
         });
@@ -163,8 +163,8 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
     if (!deletingCustomer) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/customers/${deletingCustomer.id}`, {
-        method: 'DELETE'
+      const res = await fetch(`${API_URL}/api/customers/${deletingCustomer.id}/delete`, {
+        method: 'POST'
       });
 
       if (!res.ok) {

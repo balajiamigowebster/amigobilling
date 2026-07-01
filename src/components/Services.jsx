@@ -93,8 +93,8 @@ export default function Services({ onNavigate, showToast }) {
     try {
       let res;
       if (editingService) {
-        res = await fetch(`${API_URL}/api/services/${editingService.id}`, {
-          method: 'PUT',
+        res = await fetch(`${API_URL}/api/services/${editingService.id}/update`, {
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(form)
         });
@@ -130,8 +130,8 @@ export default function Services({ onNavigate, showToast }) {
     if (!deletingService) return;
 
     try {
-      const res = await fetch(`${API_URL}/api/services/${deletingService.id}`, {
-        method: 'DELETE'
+      const res = await fetch(`${API_URL}/api/services/${deletingService.id}/delete`, {
+        method: 'POST'
       });
 
       if (!res.ok) {
