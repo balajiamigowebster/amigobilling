@@ -62,13 +62,17 @@ async function createTables() {
   // Seed leads
   const [leadsCount] = await pool.query('SELECT COUNT(*) as count FROM leads');
   if (leadsCount[0].count === 0) {
-    await pool.query(`
-      INSERT INTO leads (lead_name, role) VALUES 
-      ('Balaji Nagarajan', 'Project Director'),
-      ('Priya Patel', 'Tech Lead Developer'),
-      ('Rajesh Varma', 'Digital Marketing Director')
-    `);
-    console.log('Seeded initial PM leads data.');
+    try {
+      await pool.query(`
+        INSERT INTO leads (lead_name, role) VALUES 
+        ('Balaji Nagarajan', 'Project Director'),
+        ('Priya Patel', 'Tech Lead Developer'),
+        ('Rajesh Varma', 'Digital Marketing Director')
+      `);
+      console.log('Seeded initial PM leads data.');
+    } catch (err) {
+      console.error('Error seeding leads:', err.message);
+    }
   }
 
   // 2. Customers table (Client accounts)
@@ -91,13 +95,17 @@ async function createTables() {
   // Seed customers
   const [custCount] = await pool.query('SELECT COUNT(*) as count FROM customers');
   if (custCount[0].count === 0) {
-    await pool.query(`
-      INSERT INTO customers (customer_id_seq, customer_name, mobile_number, email, city, project_brief, assigned_lead) VALUES 
-      ('C-101', 'Karan Johar', '9876543210', 'karan@dharma.com', 'Mumbai', 'E-commerce platform with Stripe payment gateway integration.', 'Balaji Nagarajan'),
-      ('C-102', 'Simran Kaur', '8765432109', 'simran@bakery.com', 'Delhi', 'SEO audit and Google search rankings optimization campaign.', 'Priya Patel'),
-      ('C-103', 'Rahul Sharma', '7654321098', 'rahul@sharmatech.com', 'Bangalore', 'Full social media marketing handling and weekly PPC ad ads.', 'Rajesh Varma')
-    `);
-    console.log('Seeded initial customers data.');
+    try {
+      await pool.query(`
+        INSERT INTO customers (customer_id_seq, customer_name, mobile_number, email, city, project_brief, assigned_lead) VALUES 
+        ('C-101', 'Karan Johar', '9876543210', 'karan@dharma.com', 'Mumbai', 'E-commerce platform with Stripe payment gateway integration.', 'Balaji Nagarajan'),
+        ('C-102', 'Simran Kaur', '8765432109', 'simran@bakery.com', 'Delhi', 'SEO audit and Google search rankings optimization campaign.', 'Priya Patel'),
+        ('C-103', 'Rahul Sharma', '7654321098', 'rahul@sharmatech.com', 'Bangalore', 'Full social media marketing handling and weekly PPC ad ads.', 'Rajesh Varma')
+      `);
+      console.log('Seeded initial customers data.');
+    } catch (err) {
+      console.error('Error seeding customers:', err.message);
+    }
   }
 
   // 3. Services table (Agency catalog)
@@ -114,16 +122,20 @@ async function createTables() {
   // Seed services
   const [servCount] = await pool.query('SELECT COUNT(*) as count FROM services');
   if (servCount[0].count === 0) {
-    await pool.query(`
-      INSERT INTO services (service_code, service_name, cost, timeline) VALUES 
-      ('S-101', 'E-commerce Website Development', 85000.00, '4 weeks'),
-      ('S-102', 'SEO Audit & Optimization', 25000.00, '2 weeks'),
-      ('S-103', 'Social Media Marketing Campaign', 35000.00, '4 weeks'),
-      ('S-104', 'Pay-Per-Click (PPC) Advertising', 45000.00, '3 weeks'),
-      ('S-105', 'Custom UI/UX Mobile Design', 30000.00, '2 weeks'),
-      ('S-106', 'Corporate Website Redesign', 50000.00, '3 weeks')
-    `);
-    console.log('Seeded initial services catalog.');
+    try {
+      await pool.query(`
+        INSERT INTO services (service_code, service_name, cost, timeline) VALUES 
+        ('S-101', 'E-commerce Website Development', 85000.00, '4 weeks'),
+        ('S-102', 'SEO Audit & Optimization', 25000.00, '2 weeks'),
+        ('S-103', 'Social Media Marketing Campaign', 35000.00, '4 weeks'),
+        ('S-104', 'Pay-Per-Click (PPC) Advertising', 45000.00, '3 weeks'),
+        ('S-105', 'Custom UI/UX Mobile Design', 30000.00, '2 weeks'),
+        ('S-106', 'Corporate Website Redesign', 50000.00, '3 weeks')
+      `);
+      console.log('Seeded initial services catalog.');
+    } catch (err) {
+      console.error('Error seeding services:', err.message);
+    }
   }
 
   // 4. Meetings table (Client meeting logs)
@@ -142,14 +154,18 @@ async function createTables() {
   // Seed meetings
   const [meetCount] = await pool.query('SELECT COUNT(*) as count FROM meetings');
   if (meetCount[0].count === 0) {
-    const today = new Date().toISOString().slice(0, 10);
-    await pool.query(`
-      INSERT INTO meetings (customer_id, meeting_date, meeting_time, agenda, lead_name) VALUES 
-      (1, ?, '10:00 AM', 'Initial design brief & payment terms setup', 'Balaji Nagarajan'),
-      (2, ?, '11:30 AM', 'Review keyword reports and site indexing blockers', 'Priya Patel'),
-      (3, ?, '02:00 PM', 'Consultation on Instagram ads and campaign ROI', 'Rajesh Varma')
-    `, [today, today, today]);
-    console.log('Seeded initial meetings list.');
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      await pool.query(`
+        INSERT INTO meetings (customer_id, meeting_date, meeting_time, agenda, lead_name) VALUES 
+        (1, ?, '10:00 AM', 'Initial design brief & payment terms setup', 'Balaji Nagarajan'),
+        (2, ?, '11:30 AM', 'Review keyword reports and site indexing blockers', 'Priya Patel'),
+        (3, ?, '02:00 PM', 'Consultation on Instagram ads and campaign ROI', 'Rajesh Varma')
+      `, [today, today, today]);
+      console.log('Seeded initial meetings list.');
+    } catch (err) {
+      console.error('Error seeding meetings:', err.message);
+    }
   }
 
   // 5. Invoices table (Agency invoices)
@@ -194,25 +210,29 @@ async function createTables() {
   // Seed invoices
   const [invCount] = await pool.query('SELECT COUNT(*) as count FROM invoices');
   if (invCount[0].count === 0) {
-    const today = new Date().toISOString().slice(0, 10);
-    
-    const items1 = JSON.stringify([
-      { title: 'E-commerce Website Development', description: 'Complete shop setup, cart integration, and custom checkout flow', rate: 85000.00, qty: 1, amount: 85000.00 }
-    ]);
-    const items2 = JSON.stringify([
-      { title: 'SEO Audit & Optimization', description: 'Technical site health check, keywords mapping, and speed optimization', rate: 25000.00, qty: 1, amount: 25000.00 }
-    ]);
-    const items3 = JSON.stringify([
-      { title: 'Social Media Marketing Campaign', description: 'Facebook and Instagram monthly ad spend and posts scheduling management', rate: 35000.00, qty: 1, amount: 35000.00 }
-    ]);
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      
+      const items1 = JSON.stringify([
+        { title: 'E-commerce Website Development', description: 'Complete shop setup, cart integration, and custom checkout flow', rate: 85000.00, qty: 1, amount: 85000.00 }
+      ]);
+      const items2 = JSON.stringify([
+        { title: 'SEO Audit & Optimization', description: 'Technical site health check, keywords mapping, and speed optimization', rate: 25000.00, qty: 1, amount: 25000.00 }
+      ]);
+      const items3 = JSON.stringify([
+        { title: 'Social Media Marketing Campaign', description: 'Facebook and Instagram monthly ad spend and posts scheduling management', rate: 35000.00, qty: 1, amount: 35000.00 }
+      ]);
 
-    await pool.query(`
-      INSERT INTO invoices (invoice_no, customer_id_seq, customer_name, service_name, items, amount, status, invoice_date) VALUES 
-      ('INV-1001', 'C-101', 'Karan Johar', 'E-commerce Website Development', ?, 85000.00, 'Paid', ?),
-      ('INV-1002', 'C-102', 'Simran Kaur', 'SEO Audit & Optimization', ?, 25000.00, 'Unpaid', ?),
-      ('INV-1003', 'C-103', 'Rahul Sharma', 'Social Media Marketing Campaign', ?, 35000.00, 'Pending', ?)
-    `, [items1, today, items2, today, items3, today]);
-    console.log('Seeded initial agency invoices data.');
+      await pool.query(`
+        INSERT INTO invoices (invoice_no, customer_id_seq, customer_name, service_name, items, amount, status, invoice_date) VALUES 
+        ('INV-1001', 'C-101', 'Karan Johar', 'E-commerce Website Development', ?, 85000.00, 'Paid', ?),
+        ('INV-1002', 'C-102', 'Simran Kaur', 'SEO Audit & Optimization', ?, 25000.00, 'Unpaid', ?),
+        ('INV-1003', 'C-103', 'Rahul Sharma', 'Social Media Marketing Campaign', ?, 35000.00, 'Pending', ?)
+      `, [items1, today, items2, today, items3, today]);
+      console.log('Seeded initial agency invoices data.');
+    } catch (err) {
+      console.error('Error seeding invoices:', err.message);
+    }
   }
 
   // 6. Employees table
@@ -230,12 +250,16 @@ async function createTables() {
   // Seed employees
   const [empCount] = await pool.query('SELECT COUNT(*) as count FROM employees');
   if (empCount[0].count === 0) {
-    await pool.query(`
-      INSERT INTO employees (employee_name, phone_number, address, salary) VALUES 
-      ('Rajesh Kumar', '+91 98765 43210', '12, MG Road, Bangalore', 35000.00),
-      ('Ananya Sen', '+91 87654 32109', '45, Indiranagar, Bangalore', 42000.00)
-    `);
-    console.log('Seeded initial employees data.');
+    try {
+      await pool.query(`
+        INSERT INTO employees (employee_name, phone_number, address, salary) VALUES 
+        ('Rajesh Kumar', '+91 98765 43210', '12, MG Road, Bangalore', 35000.00),
+        ('Ananya Sen', '+91 87654 32109', '45, Indiranagar, Bangalore', 42000.00)
+      `);
+      console.log('Seeded initial employees data.');
+    } catch (err) {
+      console.error('Error seeding employees:', err.message);
+    }
   }
 
   // 7. Expenses table
@@ -255,14 +279,18 @@ async function createTables() {
   // Seed expenses
   const [expCount] = await pool.query('SELECT COUNT(*) as count FROM expenses');
   if (expCount[0].count === 0) {
-    const todayStr = new Date().toISOString().slice(0, 10);
-    await pool.query(`
-      INSERT INTO expenses (expense_name, category, amount, expense_date, employee_id) VALUES 
-      ('Paid Rajesh Kumar June Salary', 'Salary', 35000.00, ?, 1),
-      ('Google Search Ads - June Campaign', 'Ads', 15000.00, ?, NULL),
-      ('Office Rent - June', 'Rent', 25000.00, ?, NULL)
-    `, [todayStr, todayStr, todayStr]);
-    console.log('Seeded initial expenses data.');
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      await pool.query(`
+        INSERT INTO expenses (expense_name, category, amount, expense_date, employee_id) VALUES 
+        ('Paid Rajesh Kumar June Salary', 'Salary', 35000.00, ?, 1),
+        ('Google Search Ads - June Campaign', 'Ads', 15000.00, ?, NULL),
+        ('Office Rent - June', 'Rent', 25000.00, ?, NULL)
+      `, [todayStr, todayStr, todayStr]);
+      console.log('Seeded initial expenses data.');
+    } catch (err) {
+      console.error('Error seeding expenses:', err.message);
+    }
   }
 }
 
