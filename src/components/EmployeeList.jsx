@@ -186,18 +186,18 @@ export default function EmployeeList({ showToast }) {
             <table>
               <thead>
                 <tr>
-                  <th>Employee Name</th>
-                  <th>Phone Number</th>
+                  <th>Name</th>
+                  <th>Phone</th>
                   <th>Address</th>
-                  <th style={{ textAlign: 'right' }}>Base Monthly Salary</th>
-                  <th style={{ textAlign: 'right' }}>Total Salary Paid</th>
+                  <th style={{ textAlign: 'right' }}>Base Salary</th>
+                  <th style={{ textAlign: 'right' }}>Total Paid</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredEmployees.map((emp) => (
                   <tr key={emp.id}>
-                    <td style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', padding: '16px 8px' }}>
+                    <td style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 8px' }}>
                       <div style={{
                         width: '32px',
                         height: '32px',
@@ -220,7 +220,7 @@ export default function EmployeeList({ showToast }) {
                         <span>{emp.phone_number}</span>
                       </div>
                     </td>
-                    <td style={{ maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={emp.address}>
+                    <td style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={emp.address}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
                         <MapPin size={13} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                         <span>{emp.address}</span>

@@ -56,9 +56,23 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   // Summary Metrics
   const totalCustomers = customers.length;
   
+  const parseLocalDate = (dateStr) => {
+    if (!dateStr) return { year: 0, month: 0, day: 0 };
+    const cleanStr = dateStr.slice(0, 10);
+    const parts = cleanStr.split('-');
+    return {
+      year: parseInt(parts[0], 10),
+      month: parseInt(parts[1], 10) - 1, // 0-indexed
+      day: parseInt(parts[2], 10)
+    };
+  };
+
   const today = new Date().toLocaleDateString('sv');
   const todayRevenue = invoices
-    .filter(inv => new Date(inv.invoice_date).toLocaleDateString('sv') === today && inv.status === 'Paid')
+    .filter(inv => {
+      const dateStr = inv.invoice_date.slice(0, 10);
+      return dateStr === today && inv.status === 'Paid';
+    })
     .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
 
   const now = new Date();
@@ -67,15 +81,15 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
 
   const monthRevenue = invoices
     .filter(inv => {
-      const invDate = new Date(inv.invoice_date);
-      return invDate.getFullYear() === currentYear && invDate.getMonth() === currentMonth && inv.status === 'Paid';
+      const { year, month } = parseLocalDate(inv.invoice_date);
+      return year === currentYear && month === currentMonth && inv.status === 'Paid';
     })
     .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
 
   const yearRevenue = invoices
     .filter(inv => {
-      const invDate = new Date(inv.invoice_date);
-      return invDate.getFullYear() === currentYear && inv.status === 'Paid';
+      const { year } = parseLocalDate(inv.invoice_date);
+      return year === currentYear && inv.status === 'Paid';
     })
     .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
 
@@ -96,9 +110,8 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   });
 
   invoices.forEach(inv => {
-    const invDate = new Date(inv.invoice_date);
-    if (invDate.getFullYear() === currentYear && inv.status === 'Paid') {
-      const month = invDate.getMonth();
+    const { year, month } = parseLocalDate(inv.invoice_date);
+    if (year === currentYear && inv.status === 'Paid') {
       monthsData[month].revenue += parseFloat(inv.amount);
     }
   });

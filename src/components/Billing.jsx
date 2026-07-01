@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Search, Printer, Pencil, Trash2, Sparkles, AlertCircle, ShieldAlert, X } from 'lucide-react';
 import { API_URL } from '../config';
 
+const formatDateSafe = (dateStr) => {
+  if (!dateStr) return '—';
+  const cleanStr = dateStr.slice(0, 10);
+  const parts = cleanStr.slice(0, 10).split('-');
+  if (parts.length !== 3) return dateStr;
+  const year = parts[0];
+  const monthIndex = parseInt(parts[1], 10) - 1;
+  const day = parts[2];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${day} ${months[monthIndex] || ''} ${year}`;
+};
+
 export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
   const [invoices, setInvoices] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -338,42 +350,49 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
               <thead>
                 <tr>
                   <th>Invoice No</th>
-                  <th>Customer ID</th>
-                  <th>Company / Client</th>
-                  <th>Service Description</th>
-                  <th>Amount (INR)</th>
-                  <th>Invoice Date</th>
+                  <th>ID</th>
+                  <th>Client</th>
+                  <th>Service</th>
+                  <th>Amount</th>
+                  <th>Pending</th>
+                  <th>Date</th>
                   <th>Status</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filteredInvoices.map((inv) => (
-                  <tr key={inv.id}>
-                    <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{inv.invoice_no}</td>
-                    <td style={{ fontWeight: 600 }}>{inv.customer_id_seq}</td>
-                    <td style={{ fontWeight: 600 }}>{inv.customer_name}</td>
-                    <td>{inv.service_name}</td>
-                    <td style={{ fontWeight: 700 }}>₹{parseFloat(inv.amount).toFixed(2)}</td>
-                    <td>{new Date(inv.invoice_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                    <td>
-                      <span className={getStatusBadgeClass(inv.status)}>{inv.status}</span>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                        <button className="btn btn-secondary btn-icon-only" onClick={() => onPrintInvoice(inv)} title="Print Invoice Receipt">
-                          <Printer size={14} />
-                        </button>
-                        <button className="btn btn-outline btn-icon-only" onClick={() => handleOpenEditModal(inv)} title="Edit Details">
-                          <Pencil size={14} />
-                        </button>
-                        <button className="btn btn-danger btn-icon-only" onClick={() => setDeletingInvoice(inv)} title="Delete Record">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {filteredInvoices.map((inv) => {
+                  const pendingAmt = inv.status === 'Paid' ? 0 : Math.max(0, parseFloat(inv.amount) - parseFloat(inv.advance_paid || 0));
+                  return (
+                    <tr key={inv.id}>
+                      <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{inv.invoice_no}</td>
+                      <td style={{ fontWeight: 600 }}>{inv.customer_id_seq}</td>
+                      <td style={{ fontWeight: 600, whiteSpace: 'normal', minWidth: '140px' }}>{inv.customer_name}</td>
+                      <td style={{ whiteSpace: 'normal', minWidth: '140px' }}>{inv.service_name}</td>
+                      <td style={{ fontWeight: 700 }}>₹{parseFloat(inv.amount).toFixed(2)}</td>
+                      <td style={{ fontWeight: 600, color: pendingAmt > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
+                        {pendingAmt > 0 ? `₹${pendingAmt.toFixed(2)}` : '—'}
+                      </td>
+                      <td>{formatDateSafe(inv.invoice_date)}</td>
+                      <td>
+                        <span className={getStatusBadgeClass(inv.status)}>{inv.status}</span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button className="btn btn-secondary btn-icon-only" onClick={() => onPrintInvoice(inv)} title="Print Invoice Receipt">
+                            <Printer size={14} />
+                          </button>
+                          <button className="btn btn-outline btn-icon-only" onClick={() => handleOpenEditModal(inv)} title="Edit Details">
+                            <Pencil size={14} />
+                          </button>
+                          <button className="btn btn-danger btn-icon-only" onClick={() => setDeletingInvoice(inv)} title="Delete Record">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

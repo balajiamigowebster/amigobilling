@@ -245,13 +245,13 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
             <table>
               <thead>
                 <tr>
-                  <th>Customer ID</th>
-                  <th>Customer Name</th>
-                  <th>Mobile Number</th>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Mobile</th>
                   <th>Email</th>
                   <th>City</th>
                   <th>Project Lead</th>
-                  <th>Project Brief / Req</th>
+                  <th>Project Brief</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -259,14 +259,14 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
                 {filteredCustomers.map((customer) => (
                   <tr key={customer.id}>
                     <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{customer.customer_id_seq}</td>
-                    <td style={{ fontWeight: 600 }}>{customer.customer_name}</td>
+                    <td style={{ fontWeight: 600, whiteSpace: 'normal', minWidth: '140px' }}>{customer.customer_name}</td>
                     <td>{customer.mobile_number}</td>
-                    <td>{customer.email || '—'}</td>
+                    <td style={{ whiteSpace: 'normal', wordBreak: 'break-all', minWidth: '150px' }}>{customer.email || '—'}</td>
                     <td>{customer.city || '—'}</td>
-                    <td style={{ fontSize: '0.85rem', fontWeight: 500 }}>{customer.assigned_lead}</td>
+                    <td style={{ fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'normal', minWidth: '110px' }}>{customer.assigned_lead}</td>
                     <td style={{
                       color: 'var(--text-secondary)',
-                      maxWidth: '220px',
+                      maxWidth: '150px',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap'

@@ -20,7 +20,8 @@ async function initializeDatabase() {
         database: DB_TARGET,
         waitForConnections: true,
         connectionLimit: 10,
-        queueLimit: 0
+        queueLimit: 0,
+        dateStrings: true
       });
       console.log(`Connected to cloud database: "${DB_TARGET}"`);
     } else {
@@ -34,7 +35,8 @@ async function initializeDatabase() {
         database: DB_TARGET,
         waitForConnections: true,
         connectionLimit: 10,
-        queueLimit: 0
+        queueLimit: 0,
+        dateStrings: true
       });
       console.log(`Connected to local database: "${DB_TARGET}"`);
     }
