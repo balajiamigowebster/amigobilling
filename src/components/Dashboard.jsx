@@ -53,6 +53,24 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
     .filter(inv => new Date(inv.invoice_date).toLocaleDateString('sv') === today && inv.status === 'Paid')
     .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
 
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+
+  const monthRevenue = invoices
+    .filter(inv => {
+      const invDate = new Date(inv.invoice_date);
+      return invDate.getFullYear() === currentYear && invDate.getMonth() === currentMonth && inv.status === 'Paid';
+    })
+    .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
+
+  const yearRevenue = invoices
+    .filter(inv => {
+      const invDate = new Date(inv.invoice_date);
+      return invDate.getFullYear() === currentYear && inv.status === 'Paid';
+    })
+    .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
+
   const servicesOfferedCount = services.length;
 
   const pendingPayments = invoices
@@ -76,25 +94,7 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
 
       {/* Summary Cards */}
       <div className="stats-grid">
-        <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '12px',
-            backgroundColor: 'var(--primary-light)',
-            color: 'var(--primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Users size={24} />
-          </div>
-          <div>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Active Clients</p>
-            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>{totalCustomers}</h3>
-          </div>
-        </div>
-
+        {/* Today's Revenue */}
         <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
           <div style={{
             width: '48px',
@@ -114,25 +114,47 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
           </div>
         </div>
 
+        {/* Month's Revenue */}
         <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
           <div style={{
             width: '48px',
             height: '48px',
             borderRadius: '12px',
-            backgroundColor: 'hsl(190, 80%, 94%)',
-            color: 'var(--secondary)',
+            backgroundColor: 'hsl(215, 80%, 95%)',
+            color: 'hsl(215, 80%, 45%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
           }}>
-            <Briefcase size={24} />
+            <IndianRupee size={24} />
           </div>
           <div>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Services Catalog</p>
-            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>{servicesOfferedCount}</h3>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Month's Revenue</p>
+            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>₹{monthRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
           </div>
         </div>
 
+        {/* Year's Revenue */}
+        <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            backgroundColor: 'hsl(325, 80%, 95%)',
+            color: 'hsl(325, 80%, 45%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <IndianRupee size={24} />
+          </div>
+          <div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Year's Revenue</p>
+            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>₹{yearRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+          </div>
+        </div>
+
+        {/* Pending Payments */}
         <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
           <div style={{
             width: '48px',
@@ -149,6 +171,46 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
           <div>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Pending Payments</p>
             <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>₹{pendingPayments.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+          </div>
+        </div>
+
+        {/* Active Clients */}
+        <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            backgroundColor: 'var(--primary-light)',
+            color: 'var(--primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Users size={24} />
+          </div>
+          <div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Active Clients</p>
+            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>{totalCustomers}</h3>
+          </div>
+        </div>
+
+        {/* Services Catalog */}
+        <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            backgroundColor: 'hsl(190, 80%, 94%)',
+            color: 'var(--secondary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <Briefcase size={24} />
+          </div>
+          <div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Services Catalog</p>
+            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>{servicesOfferedCount}</h3>
           </div>
         </div>
       </div>
