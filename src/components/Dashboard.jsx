@@ -8,6 +8,7 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const [services, setServices] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -76,6 +77,101 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const pendingPayments = invoices
     .filter(inv => inv.status !== 'Paid')
     .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
+
+  // --- CHART CALCULATIONS ---
+  const monthsData = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(currentYear, i, 1);
+    return {
+      month: i,
+      label: d.toLocaleString('en-US', { month: 'short' }),
+      revenue: 0
+    };
+  });
+
+  invoices.forEach(inv => {
+    const invDate = new Date(inv.invoice_date);
+    if (invDate.getFullYear() === currentYear && inv.status === 'Paid') {
+      const month = invDate.getMonth();
+      monthsData[month].revenue += parseFloat(inv.amount);
+    }
+  });
+
+  const maxRevenue = Math.max(...monthsData.map(m => m.revenue));
+  const scaleMax = maxRevenue > 0 ? maxRevenue * 1.15 : 10000;
+
+  // Chart layout dimensions
+  const width = 800;
+  const height = 220;
+  const paddingLeft = 55;
+  const paddingRight = 15;
+  const paddingTop = 20;
+  const paddingBottom = 30;
+
+  const chartWidth = width - paddingLeft - paddingRight;
+  const chartHeight = height - paddingTop - paddingBottom;
+
+  const points = monthsData.map((d, i) => {
+    const x = paddingLeft + (i / 11) * chartWidth;
+    const y = paddingTop + chartHeight - (d.revenue / scaleMax) * chartHeight;
+    return { x, y, label: d.label, revenue: d.revenue };
+  });
+
+  const getBezierPath = (pts) => {
+    if (pts.length === 0) return '';
+    let path = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const curr = pts[i];
+      const next = pts[i + 1];
+      const cp1x = curr.x + (next.x - curr.x) / 3;
+      const cp1y = curr.y;
+      const cp2x = curr.x + 2 * (next.x - curr.x) / 3;
+      const cp2y = next.y;
+      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
+    }
+    return path;
+  };
+
+  const linePath = getBezierPath(points);
+  const areaPath = points.length > 0
+    ? `${linePath} L ${points[points.length - 1].x} ${paddingTop + chartHeight} L ${points[0].x} ${paddingTop + chartHeight} Z`
+    : '';
+
+  const yTicks = [0, 0.25, 0.5, 0.75, 1];
+
+  const formatYLabel = (val) => {
+    if (val === 0) return '₹0';
+    if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
+    if (val >= 1000) return `₹${(val / 1000).toFixed(0)}K`;
+    return `₹${val.toFixed(0)}`;
+  };
+
+  const animationStyle = `
+    @keyframes drawPath {
+      from {
+        stroke-dashoffset: 1200;
+      }
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+    @keyframes fadeInArea {
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 0.8;
+      }
+    }
+    .chart-line {
+      stroke-dasharray: 1200;
+      stroke-dashoffset: 1200;
+      animation: drawPath 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    }
+    .chart-area {
+      opacity: 0;
+      animation: fadeInArea 1s ease-out 1.2s forwards;
+    }
+  `;
 
   if (loading) {
     return (
@@ -212,6 +308,172 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Services Catalog</p>
             <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>{servicesOfferedCount}</h3>
           </div>
+        </div>
+      </div>
+
+      {/* Yearly Revenue Trend Curve Chart */}
+      <div className="card" style={{ padding: '24px', marginBottom: '24px', position: 'relative' }}>
+        <style dangerouslySetInnerHTML={{ __html: animationStyle }} />
+        <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <div>
+            <h3 className="card-title" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Yearly Revenue Trend ({currentYear})</h3>
+            <p className="card-subtitle">Monthly breakdown of agency billing and closed invoices.</p>
+          </div>
+          <div style={{ display: 'flex', gap: '16px', fontSize: '0.82rem', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--primary)' }}></span>
+              <span style={{ color: 'var(--text-secondary)' }}>Paid Revenue</span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ position: 'relative', width: '100%' }}>
+          <svg viewBox="0 0 800 220" width="100%" height="auto" style={{ overflow: 'visible' }}>
+            <defs>
+              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.00" />
+              </linearGradient>
+            </defs>
+
+            {/* Horizontal Gridlines */}
+            {yTicks.map((tick, idx) => {
+              const y = paddingTop + chartHeight - tick * chartHeight;
+              return (
+                <g key={idx}>
+                  <line
+                    x1={paddingLeft}
+                    y1={y}
+                    x2={width - paddingRight}
+                    y2={y}
+                    stroke="hsl(220, 15%, 93%)"
+                    strokeWidth={1}
+                  />
+                  <text
+                    x={paddingLeft - 12}
+                    y={y + 4}
+                    textAnchor="end"
+                    style={{ fontSize: '0.72rem', fill: 'var(--text-muted)', fontWeight: 600 }}
+                  >
+                    {formatYLabel(tick * scaleMax)}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Area Path */}
+            {areaPath && (
+              <path
+                d={areaPath}
+                fill="url(#chartGradient)"
+                className="chart-area"
+              />
+            )}
+
+            {/* Curve Line Path */}
+            {linePath && (
+              <path
+                d={linePath}
+                fill="none"
+                stroke="var(--primary)"
+                strokeWidth={3}
+                strokeLinecap="round"
+                className="chart-line"
+              />
+            )}
+
+            {/* Interactive Dots for Data Points */}
+            {points.map((pt, idx) => (
+              <circle
+                key={idx}
+                cx={pt.x}
+                cy={pt.y}
+                r={4}
+                fill="var(--bg-card)"
+                stroke="var(--primary)"
+                strokeWidth={2.5}
+                className="chart-dot"
+                style={{
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer'
+                }}
+              />
+            ))}
+
+            {/* X-Axis Labels */}
+            {points.map((pt, idx) => (
+              <text
+                key={idx}
+                x={pt.x}
+                y={height - 5}
+                textAnchor="middle"
+                style={{ fontSize: '0.75rem', fill: 'var(--text-secondary)', fontWeight: 600 }}
+              >
+                {pt.label}
+              </text>
+            ))}
+
+            {/* Vertical guidelines on hover */}
+            {hoveredIndex !== null && (
+              <line
+                x1={points[hoveredIndex].x}
+                y1={paddingTop}
+                x2={points[hoveredIndex].x}
+                y2={paddingTop + chartHeight}
+                stroke="var(--primary)"
+                strokeDasharray="4 4"
+                strokeWidth={1.5}
+                opacity={0.4}
+              />
+            )}
+
+            {/* Hover overlay hitboxes */}
+            {points.map((pt, i) => (
+              <rect
+                key={i}
+                x={pt.x - chartWidth / 22}
+                y={paddingTop}
+                width={chartWidth / 11}
+                height={chartHeight}
+                fill="transparent"
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => setHoveredIndex(i)}
+                onMouseLeave={() => setHoveredIndex(null)}
+              />
+            ))}
+          </svg>
+
+          {/* Interactive Tooltip */}
+          {hoveredIndex !== null && (
+            <div
+              style={{
+                position: 'absolute',
+                left: `${(points[hoveredIndex].x / width) * 100}%`,
+                top: `${points[hoveredIndex].y - 65}px`,
+                transform: 'translateX(-50%)',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid var(--border-color)',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                boxShadow: 'var(--shadow-md)',
+                pointerEvents: 'none',
+                zIndex: 10,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px',
+                alignItems: 'center',
+                transition: 'left 0.1s ease, top 0.1s ease'
+              }}
+            >
+              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                {points[hoveredIndex].label} {currentYear}
+              </span>
+              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 700 }}>
+                ₹{points[hoveredIndex].revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
