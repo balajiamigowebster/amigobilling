@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Printer, Pencil, Trash2, Sparkles, AlertCircle, ShieldAlert, X } from 'lucide-react';
+import { Plus, Search, Printer, Pencil, Trash2, Sparkles, AlertCircle, ShieldAlert, X, FileSpreadsheet } from 'lucide-react';
 import { API_URL } from '../config';
 
 const formatDateSafe = (dateStr) => {
@@ -48,6 +48,45 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
   // Delete State
   const [deletingInvoice, setDeletingInvoice] = useState(null);
 
+  const handleExportToExcel = () => {
+    const headers = ['Invoice No', 'Date', 'Customer Name', 'Service / Item', 'Amount', 'Advance Paid', 'Pending Amount', 'Status'];
+    
+    const rows = filteredInvoices.map(inv => {
+      const amt = parseFloat(inv.amount) || 0;
+      const adv = parseFloat(inv.advance_paid) || 0;
+      const pending = inv.status === 'Paid' ? 0 : (amt - adv);
+      return [
+        inv.invoice_no || '',
+        inv.invoice_date ? inv.invoice_date.slice(0, 10) : '',
+        inv.customer_name || '',
+        inv.service_name || '',
+        amt,
+        adv,
+        pending,
+        inv.status || ''
+      ];
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => {
+        const strVal = String(val);
+        if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
+          return `"${strVal.replace(/"/g, '""')}"`;
+        }
+        return strVal;
+      }).join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `invoice_list_${new Date().toLocaleDateString('sv')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     fetchInvoices();
@@ -312,9 +351,14 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
           <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Billing & Invoices</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Track accounts receivables, client invoices, and billing history.</p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenAddModal}>
-          <Plus size={18} /> Create Invoice
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button className="btn btn-secondary" onClick={handleExportToExcel} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FileSpreadsheet size={18} /> Export Excel
+          </button>
+          <button className="btn btn-primary" onClick={handleOpenAddModal}>
+            <Plus size={18} /> Create Invoice
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ padding: '0 0 24px 0', gap: '16px' }}>

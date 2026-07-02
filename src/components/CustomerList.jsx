@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Eye, AlertCircle, Sparkles, X, Pencil, Trash2, ShieldAlert } from 'lucide-react';
+import { Plus, Search, Eye, AlertCircle, Sparkles, X, Pencil, Trash2, ShieldAlert, FileSpreadsheet } from 'lucide-react';
 import { API_URL } from '../config';
 
 export default function CustomerList({ onNavigate, openRegisterModal, onCloseRegisterModal, onSaveSuccess }) {
@@ -26,6 +26,40 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
 
+  const handleExportToExcel = () => {
+    const headers = ['Customer ID', 'Customer Name', 'Mobile Number', 'Email', 'City', 'Pincode', 'Address', 'Project Brief'];
+    
+    const rows = filteredCustomers.map(cust => [
+      cust.customer_id_seq || '',
+      cust.customer_name || '',
+      cust.mobile_number || '',
+      cust.email_address || '',
+      cust.city || '',
+      cust.pincode || '',
+      cust.address || '',
+      cust.project_brief || ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => {
+        const strVal = String(val);
+        if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
+          return `"${strVal.replace(/"/g, '""')}"`;
+        }
+        return strVal;
+      }).join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `customer_list_${new Date().toLocaleDateString('sv')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     fetchCustomers();
@@ -208,9 +242,14 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
           <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Customer Accounts</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Manage corporate clients, active customers, and project details.</p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenAddModal}>
-          <Plus size={18} /> Add Customer
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button className="btn btn-secondary" onClick={handleExportToExcel} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FileSpreadsheet size={18} /> Export Excel
+          </button>
+          <button className="btn btn-primary" onClick={handleOpenAddModal}>
+            <Plus size={18} /> Add Customer
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ padding: '0 0 24px 0', gap: '16px' }}>
