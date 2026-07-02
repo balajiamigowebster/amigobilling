@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, IndianRupee, Briefcase, AlertCircle, Plus, Calendar, Video } from 'lucide-react';
+import { Users, IndianRupee, Briefcase, AlertCircle, Plus, Calendar, Video, TrendingUp, TrendingDown } from 'lucide-react';
 import { API_URL } from '../config';
 
 export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
@@ -7,6 +7,7 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const [invoices, setInvoices] = useState([]);
   const [services, setServices] = useState([]);
   const [meetings, setMeetings] = useState([]);
+  const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   useEffect(() => {
@@ -41,6 +42,13 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
         const meetData = await meetRes.json();
         if (meetRes.ok && Array.isArray(meetData)) {
           setMeetings(meetData);
+        }
+
+        // 5. Fetch Expenses
+        const expRes = await fetch(`${API_URL}/api/expenses`);
+        const expData = await expRes.json();
+        if (expRes.ok && Array.isArray(expData)) {
+          setExpenses(expData);
         }
 
       } catch (err) {
@@ -103,6 +111,23 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
     })
     .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
 
+  const yearExpenses = expenses
+    .filter(exp => parseLocalDate(exp.expense_date).year === currentYear)
+    .reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+
+  const yearProfit = yearRevenue - yearExpenses;
+  const yearProfitPercent = yearRevenue > 0 ? (yearProfit / yearRevenue) * 100 : 0;
+
+  const monthExpenses = expenses
+    .filter(exp => {
+      const { year, month } = parseLocalDate(exp.expense_date);
+      return year === currentYear && month === currentMonth;
+    })
+    .reduce((sum, exp) => sum + parseFloat(exp.amount), 0);
+
+  const monthProfit = monthRevenue - monthExpenses;
+  const monthProfitPercent = monthRevenue > 0 ? (monthProfit / monthRevenue) * 100 : 0;
+
   const servicesOfferedCount = services.length;
 
   const pendingPayments = invoices
@@ -115,7 +140,9 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
     return {
       month: i,
       label: d.toLocaleString('en-US', { month: 'short' }),
-      revenue: 0
+      revenue: 0,
+      expenses: 0,
+      profit: 0
     };
   });
 
@@ -126,8 +153,21 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
     }
   });
 
-  const maxRevenue = Math.max(...monthsData.map(m => m.revenue));
-  const scaleMax = maxRevenue > 0 ? maxRevenue * 1.15 : 10000;
+  expenses.forEach(exp => {
+    const { year, month } = parseLocalDate(exp.expense_date);
+    if (year === currentYear) {
+      monthsData[month].expenses += parseFloat(exp.amount);
+    }
+  });
+
+  monthsData.forEach(m => {
+    m.profit = m.revenue - m.expenses;
+  });
+
+  const maxVal = Math.max(
+    ...monthsData.map(m => Math.max(m.revenue, m.expenses, m.profit, 0))
+  );
+  const scaleMax = maxVal > 0 ? maxVal * 1.15 : 10000;
 
   // Chart layout dimensions
   const width = 800;
@@ -142,28 +182,33 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
 
   const points = monthsData.map((d, i) => {
     const x = paddingLeft + (i / 11) * chartWidth;
-    const y = paddingTop + chartHeight - (d.revenue / scaleMax) * chartHeight;
-    return { x, y, label: d.label, revenue: d.revenue };
+    const yRev = paddingTop + chartHeight - (d.revenue / scaleMax) * chartHeight;
+    const yExp = paddingTop + chartHeight - (d.expenses / scaleMax) * chartHeight;
+    const yProf = paddingTop + chartHeight - (d.profit / scaleMax) * chartHeight;
+    return { x, yRev, yExp, yProf, label: d.label, revenue: d.revenue, expenses: d.expenses, profit: d.profit };
   });
 
-  const getBezierPath = (pts) => {
+  const getBezierPath = (pts, key) => {
     if (pts.length === 0) return '';
-    let path = `M ${pts[0].x} ${pts[0].y}`;
+    let path = `M ${pts[0].x} ${pts[0][key]}`;
     for (let i = 0; i < pts.length - 1; i++) {
       const curr = pts[i];
       const next = pts[i + 1];
       const cp1x = curr.x + (next.x - curr.x) / 3;
-      const cp1y = curr.y;
+      const cp1y = curr[key];
       const cp2x = curr.x + 2 * (next.x - curr.x) / 3;
-      const cp2y = next.y;
-      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next.y}`;
+      const cp2y = next[key];
+      path += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${next.x} ${next[key]}`;
     }
     return path;
   };
 
-  const linePath = getBezierPath(points);
-  const areaPath = points.length > 0
-    ? `${linePath} L ${points[points.length - 1].x} ${paddingTop + chartHeight} L ${points[0].x} ${paddingTop + chartHeight} Z`
+  const linePathRev = getBezierPath(points, 'yRev');
+  const linePathExp = getBezierPath(points, 'yExp');
+  const linePathProf = getBezierPath(points, 'yProf');
+
+  const areaPathProf = points.length > 0
+    ? `${linePathProf} L ${points[points.length - 1].x} ${paddingTop + chartHeight} L ${points[0].x} ${paddingTop + chartHeight} Z`
     : '';
 
   const yTicks = [0, 0.25, 0.5, 0.75, 1];
@@ -189,7 +234,7 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
         opacity: 0;
       }
       to {
-        opacity: 0.8;
+        opacity: 0.15;
       }
     }
     .chart-line {
@@ -280,6 +325,51 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
           </div>
         </div>
 
+        {/* Year's Expenses */}
+        <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            backgroundColor: 'var(--danger-light)',
+            color: 'var(--danger)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <TrendingDown size={24} />
+          </div>
+          <div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Year's Expenses</p>
+            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>₹{yearExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+          </div>
+        </div>
+
+        {/* Year's Profit */}
+        <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            backgroundColor: 'var(--success-light)',
+            color: 'var(--success)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <TrendingUp size={24} />
+          </div>
+          <div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Year's Profit</p>
+            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>
+              ₹{yearProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <span style={{ fontSize: '0.85rem', color: yearProfit >= 0 ? 'var(--success)' : 'var(--danger)', marginLeft: '6px', fontWeight: 600 }}>
+                ({yearProfitPercent.toFixed(1)}%)
+              </span>
+            </h3>
+          </div>
+        </div>
+
         {/* Pending Payments */}
         <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
           <div style={{
@@ -341,18 +431,26 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
         </div>
       </div>
 
-      {/* Yearly Revenue Trend Curve Chart */}
+      {/* Yearly Profit & Revenue Trend curve Chart */}
       <div className="card" style={{ padding: '24px', marginBottom: '24px', position: 'relative' }}>
         <style dangerouslySetInnerHTML={{ __html: animationStyle }} />
-        <div style={{ display: 'flex', justifycontent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <div>
-            <h3 className="card-title" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Yearly Revenue Trend ({currentYear})</h3>
-            <p className="card-subtitle">Monthly breakdown of agency billing and closed invoices.</p>
+            <h3 className="card-title" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Yearly Profit & Revenue Trend ({currentYear})</h3>
+            <p className="card-subtitle">Monthly breakdown of agency revenue, expenses, and net profit.</p>
           </div>
           <div style={{ display: 'flex', gap: '16px', fontSize: '0.82rem', fontWeight: 600 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--primary)' }}></span>
-              <span style={{ color: 'var(--text-secondary)' }}>Paid Revenue</span>
+              <span style={{ color: 'var(--text-secondary)' }}>Revenue</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--danger)' }}></span>
+              <span style={{ color: 'var(--text-secondary)' }}>Expenses</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--success)' }}></span>
+              <span style={{ color: 'var(--text-secondary)' }}>Profit</span>
             </div>
           </div>
         </div>
@@ -361,8 +459,12 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
           <svg viewBox="0 0 800 220" width="100%" height="auto" style={{ overflow: 'visible' }}>
             <defs>
               <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.00" />
+                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
+              </linearGradient>
+              <linearGradient id="chartGradientProf" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--success)" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="var(--success)" stopOpacity="0.0" />
               </linearGradient>
             </defs>
 
@@ -391,22 +493,46 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
               );
             })}
 
-            {/* Area Path */}
-            {areaPath && (
+            {/* Area Path for Profit */}
+            {areaPathProf && (
               <path
-                d={areaPath}
-                fill="url(#chartGradient)"
+                d={areaPathProf}
+                fill="url(#chartGradientProf)"
                 className="chart-area"
               />
             )}
 
-            {/* Curve Line Path */}
-            {linePath && (
+            {/* Curve Line Path - Revenue */}
+            {linePathRev && (
               <path
-                d={linePath}
+                d={linePathRev}
                 fill="none"
                 stroke="var(--primary)"
-                strokeWidth={3}
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                className="chart-line"
+              />
+            )}
+
+            {/* Curve Line Path - Expenses */}
+            {linePathExp && (
+              <path
+                d={linePathExp}
+                fill="none"
+                stroke="var(--danger)"
+                strokeWidth={2.5}
+                strokeLinecap="round"
+                className="chart-line"
+              />
+            )}
+
+            {/* Curve Line Path - Profit */}
+            {linePathProf && (
+              <path
+                d={linePathProf}
+                fill="none"
+                stroke="var(--success)"
+                strokeWidth={3.5}
                 strokeLinecap="round"
                 className="chart-line"
               />
@@ -414,20 +540,32 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
 
             {/* Interactive Dots for Data Points */}
             {points.map((pt, idx) => (
-              <circle
-                key={idx}
-                cx={pt.x}
-                cy={pt.y}
-                r={4}
-                fill="var(--bg-card)"
-                stroke="var(--primary)"
-                strokeWidth={2.5}
-                className="chart-dot"
-                style={{
-                  transition: 'all 0.2s ease',
-                  cursor: 'pointer'
-                }}
-              />
+              <g key={idx}>
+                <circle
+                  cx={pt.x}
+                  cy={pt.yRev}
+                  r={3.5}
+                  fill="var(--bg-card)"
+                  stroke="var(--primary)"
+                  strokeWidth={2}
+                />
+                <circle
+                  cx={pt.x}
+                  cy={pt.yExp}
+                  r={3.5}
+                  fill="var(--bg-card)"
+                  stroke="var(--danger)"
+                  strokeWidth={2}
+                />
+                <circle
+                  cx={pt.x}
+                  cy={pt.yProf}
+                  r={4}
+                  fill="var(--bg-card)"
+                  stroke="var(--success)"
+                  strokeWidth={2.5}
+                />
+              </g>
             ))}
 
             {/* X-Axis Labels */}
@@ -479,29 +617,40 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
               style={{
                 position: 'absolute',
                 left: `${(points[hoveredIndex].x / width) * 100}%`,
-                top: `${points[hoveredIndex].y - 65}px`,
+                top: `${Math.min(points[hoveredIndex].yRev, points[hoveredIndex].yExp, points[hoveredIndex].yProf) - 95}px`,
                 transform: 'translateX(-50%)',
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                backdropFilter: 'blur(8px)',
-                border: '1px solid var(--border-color)',
-                padding: '8px 12px',
-                borderRadius: '8px',
-                boxShadow: 'var(--shadow-md)',
+                backgroundColor: 'rgba(30, 41, 59, 0.96)',
+                color: '#ffffff',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                boxShadow: 'var(--shadow-lg)',
                 pointerEvents: 'none',
                 zIndex: 10,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '2px',
-                alignItems: 'center',
-                transition: 'left 0.1s ease, top 0.1s ease'
+                gap: '4px',
+                minWidth: '180px',
+                transition: 'left 0.1s ease, top 0.1s ease',
+                fontSize: '0.78rem'
               }}
             >
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              <span style={{ fontSize: '0.82rem', color: 'hsl(215, 20%, 80%)', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px', marginBottom: '4px', textAlign: 'center' }}>
                 {points[hoveredIndex].label} {currentYear}
               </span>
-              <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 700 }}>
-                ₹{points[hoveredIndex].revenue.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
-              </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+                <span style={{ color: 'hsl(215, 20%, 80%)' }}>Revenue:</span>
+                <span style={{ fontWeight: 600 }}>₹{points[hoveredIndex].revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+                <span style={{ color: 'hsl(215, 20%, 80%)' }}>Expenses:</span>
+                <span style={{ fontWeight: 600, color: 'hsl(10, 95%, 75%)' }}>₹{points[hoveredIndex].expenses.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '4px', marginTop: '4px' }}>
+                <span style={{ color: 'hsl(215, 20%, 80%)', fontWeight: 600 }}>Profit:</span>
+                <span style={{ fontWeight: 700, color: points[hoveredIndex].profit >= 0 ? 'hsl(145, 80%, 75%)' : 'hsl(355, 85%, 75%)' }}>
+                  ₹{points[hoveredIndex].profit.toLocaleString('en-IN', { maximumFractionDigits: 0 })} ({ (points[hoveredIndex].revenue > 0 ? (points[hoveredIndex].profit / points[hoveredIndex].revenue) * 100 : 0).toFixed(0) }%)
+                </span>
+              </div>
             </div>
           )}
         </div>
