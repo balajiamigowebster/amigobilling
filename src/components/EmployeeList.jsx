@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Pencil, Trash2, X, Sparkles, UserCheck, Phone, MapPin, IndianRupee } from 'lucide-react';
+import { Plus, Search, Pencil, Trash2, X, Sparkles, UserCheck, Phone, MapPin, IndianRupee, FileSpreadsheet } from 'lucide-react';
 import { API_URL } from '../config';
 
 export default function EmployeeList({ showToast }) {
@@ -17,6 +17,38 @@ export default function EmployeeList({ showToast }) {
     address: '',
     salary: ''
   });
+
+  const handleExportToExcel = () => {
+    const headers = ['Name', 'Phone Number', 'Address', 'Base Salary', 'Total Paid'];
+    
+    const rows = filteredEmployees.map(emp => [
+      emp.employee_name || '',
+      emp.phone_number || '',
+      emp.address || '',
+      parseFloat(emp.base_salary) || 0,
+      parseFloat(emp.total_paid) || 0
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(val => {
+        const strVal = String(val);
+        if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
+          return `"${strVal.replace(/"/g, '""')}"`;
+        }
+        return strVal;
+      }).join(','))
+    ].join('\n');
+
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `employee_list_${new Date().toLocaleDateString('sv')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   useEffect(() => {
     fetchEmployees();
@@ -149,9 +181,14 @@ export default function EmployeeList({ showToast }) {
           <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Employee Directory</h1>
           <p style={{ color: 'var(--text-secondary)' }}>Manage staff details, contact info, base salary, and tracking paid payouts.</p>
         </div>
-        <button className="btn btn-primary" onClick={handleOpenAddModal}>
-          <Plus size={18} /> Add Employee
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button className="btn btn-secondary" onClick={handleExportToExcel} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <FileSpreadsheet size={18} /> Export Excel
+          </button>
+          <button className="btn btn-primary" onClick={handleOpenAddModal}>
+            <Plus size={18} /> Add Employee
+          </button>
+        </div>
       </div>
 
       <div className="card" style={{ padding: '0 0 24px 0', gap: '16px' }}>
