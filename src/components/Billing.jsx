@@ -398,6 +398,7 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
                   <th>Client</th>
                   <th>Service</th>
                   <th>Amount</th>
+                  <th>Advance</th>
                   <th>Pending</th>
                   <th>Date</th>
                   <th>Status</th>
@@ -414,6 +415,9 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
                       <td style={{ fontWeight: 600, whiteSpace: 'normal', minWidth: '140px' }}>{inv.customer_name}</td>
                       <td style={{ whiteSpace: 'normal', minWidth: '140px' }}>{inv.service_name}</td>
                       <td style={{ fontWeight: 700 }}>₹{parseFloat(inv.amount).toFixed(2)}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
+                        {parseFloat(inv.advance_paid || 0) > 0 ? `₹${parseFloat(inv.advance_paid).toFixed(2)}` : '—'}
+                      </td>
                       <td style={{ fontWeight: 600, color: pendingAmt > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
                         {pendingAmt > 0 ? `₹${pendingAmt.toFixed(2)}` : '—'}
                       </td>
