@@ -167,7 +167,12 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const maxVal = Math.max(
     ...monthsData.map(m => Math.max(m.revenue, m.expenses, m.profit, 0))
   );
+  const minVal = Math.min(
+    ...monthsData.map(m => Math.min(m.revenue, m.expenses, m.profit, 0))
+  );
   const scaleMax = maxVal > 0 ? maxVal * 1.15 : 10000;
+  const scaleMin = minVal < 0 ? minVal * 1.15 : 0;
+  const scaleRange = scaleMax - scaleMin;
 
   // Chart layout dimensions
   const width = 800;
@@ -182,9 +187,9 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
 
   const points = monthsData.map((d, i) => {
     const x = paddingLeft + (i / 11) * chartWidth;
-    const yRev = paddingTop + chartHeight - (d.revenue / scaleMax) * chartHeight;
-    const yExp = paddingTop + chartHeight - (d.expenses / scaleMax) * chartHeight;
-    const yProf = paddingTop + chartHeight - (d.profit / scaleMax) * chartHeight;
+    const yRev = paddingTop + chartHeight - ((d.revenue - scaleMin) / scaleRange) * chartHeight;
+    const yExp = paddingTop + chartHeight - ((d.expenses - scaleMin) / scaleRange) * chartHeight;
+    const yProf = paddingTop + chartHeight - ((d.profit - scaleMin) / scaleRange) * chartHeight;
     return { x, yRev, yExp, yProf, label: d.label, revenue: d.revenue, expenses: d.expenses, profit: d.profit };
   });
 
@@ -207,17 +212,23 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const linePathExp = getBezierPath(points, 'yExp');
   const linePathProf = getBezierPath(points, 'yProf');
 
+  const yZero = paddingTop + chartHeight - ((0 - scaleMin) / scaleRange) * chartHeight;
+
   const areaPathProf = points.length > 0
-    ? `${linePathProf} L ${points[points.length - 1].x} ${paddingTop + chartHeight} L ${points[0].x} ${paddingTop + chartHeight} Z`
+    ? `${linePathProf} L ${points[points.length - 1].x} ${yZero} L ${points[0].x} ${yZero} Z`
     : '';
 
   const yTicks = [0, 0.25, 0.5, 0.75, 1];
 
   const formatYLabel = (val) => {
-    if (val === 0) return '₹0';
-    if (val >= 100000) return `₹${(val / 100000).toFixed(1)}L`;
-    if (val >= 1000) return `₹${(val / 1000).toFixed(0)}K`;
-    return `₹${val.toFixed(0)}`;
+    const isNegative = val < 0;
+    const absVal = Math.abs(val);
+    let label = '';
+    if (absVal === 0) return '₹0';
+    if (absVal >= 100000) label = `₹${(absVal / 100000).toFixed(1)}L`;
+    else if (absVal >= 1000) label = `₹${(absVal / 1000).toFixed(0)}K`;
+    else label = `₹${absVal.toFixed(0)}`;
+    return isNegative ? `-${label}` : label;
   };
 
   const animationStyle = `
@@ -487,11 +498,24 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
                     textAnchor="end"
                     style={{ fontSize: '0.72rem', fill: 'var(--text-muted)', fontWeight: 600 }}
                   >
-                    {formatYLabel(tick * scaleMax)}
+                    {formatYLabel(scaleMin + tick * scaleRange)}
                   </text>
                 </g>
               );
             })}
+
+            {/* 0 Baseline Line */}
+            {scaleMin < 0 && (
+              <line
+                x1={paddingLeft}
+                y1={yZero}
+                x2={width - paddingRight}
+                y2={yZero}
+                stroke="hsl(220, 15%, 70%)"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+              />
+            )}
 
             {/* Area Path for Profit */}
             {areaPathProf && (
