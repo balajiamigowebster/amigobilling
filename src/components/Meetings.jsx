@@ -9,6 +9,8 @@ export default function Meetings({ onNavigate, showToast }) {
   const [selectedDate, setSelectedDate] = useState(new Date().toLocaleDateString('sv'));
   const [showBookModal, setShowBookModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Form State
   const [form, setForm] = useState({
@@ -31,6 +33,7 @@ export default function Meetings({ onNavigate, showToast }) {
   useEffect(() => {
     fetchMeetings();
     fetchCustomersAndLeads();
+    setCurrentPage(1);
   }, [selectedDate]);
 
   const fetchMeetings = async () => {
@@ -166,39 +169,96 @@ export default function Meetings({ onNavigate, showToast }) {
               <p>No appointments scheduled for this date.</p>
               <button className="btn btn-secondary" onClick={handleOpenBookModal} style={{ marginTop: '8px' }}>Schedule One Now</button>
             </div>
-          ) : (
-            <div className="table-responsive-container" style={{ border: 'none' }}>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Time</th>
-                    <th>Patient ID</th>
-                    <th>Patient Name</th>
-                    <th>Mobile</th>
-                    <th>Assigned Doctor</th>
-                    <th>Symptoms / Diagnosis</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {meetings.map((meet) => (
-                    <tr key={meet.id}>
-                      <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <Clock size={14} />
-                          {meet.meeting_time}
-                        </div>
-                      </td>
-                      <td style={{ fontWeight: 600 }}>{meet.customer_id_seq}</td>
-                      <td style={{ fontWeight: 600 }}>{meet.customer_name}</td>
-                      <td>{meet.mobile_number}</td>
-                      <td>{meet.lead_name}</td>
-                      <td style={{ color: 'var(--text-secondary)' }}>{meet.agenda}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+          ) : (() => {
+            const totalItems = meetings.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedMeetings = meetings.slice(startIndex, endIndex);
+
+            const getPageNumbers = () => {
+              const pages = [];
+              const maxVisible = 5;
+              let start = Math.max(1, currentPage - 2);
+              let end = Math.min(totalPages, start + maxVisible - 1);
+              if (end - start < maxVisible - 1) {
+                start = Math.max(1, end - maxVisible + 1);
+              }
+              for (let i = start; i <= end; i++) {
+                pages.push(i);
+              }
+              return pages;
+            };
+
+            return (
+              <>
+                <div className="table-responsive-container" style={{ border: 'none' }}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Time</th>
+                        <th>Patient ID</th>
+                        <th>Patient Name</th>
+                        <th>Mobile</th>
+                        <th>Assigned Doctor</th>
+                        <th>Symptoms / Diagnosis</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedMeetings.map((meet) => (
+                        <tr key={meet.id}>
+                          <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <Clock size={14} />
+                              {meet.meeting_time}
+                            </div>
+                          </td>
+                          <td style={{ fontWeight: 600 }}>{meet.customer_id_seq}</td>
+                          <td style={{ fontWeight: 600 }}>{meet.customer_name}</td>
+                          <td>{meet.mobile_number}</td>
+                          <td>{meet.lead_name}</td>
+                          <td style={{ color: 'var(--text-secondary)' }}>{meet.agenda}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {meetings.length > 0 && (
+                  <div className="pagination-container">
+                    <span className="pagination-info">
+                      Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} entries
+                    </span>
+                    <div className="pagination-buttons">
+                      <button 
+                        className="btn-pagination" 
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      >
+                        Previous
+                      </button>
+                      {getPageNumbers().map(page => (
+                        <button
+                          key={page}
+                          className={`btn-pagination-number ${currentPage === page ? 'active' : ''}`}
+                          onClick={() => setCurrentPage(page)}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button 
+                        className="btn-pagination" 
+                        disabled={currentPage === totalPages}
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
       </div>
 

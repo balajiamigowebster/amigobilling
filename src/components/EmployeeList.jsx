@@ -5,6 +5,8 @@ import { API_URL } from '../config';
 export default function EmployeeList({ showToast }) {
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [showModal, setShowModal] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [formError, setFormError] = useState('');
@@ -174,6 +176,28 @@ export default function EmployeeList({ showToast }) {
     );
   });
 
+  const totalItems = filteredEmployees.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedEmployees = filteredEmployees.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    
+    if (end - start < maxVisible - 1) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
   return (
     <div>
       <div className="card-header-flex" style={{ marginBottom: '24px' }}>
@@ -208,7 +232,10 @@ export default function EmployeeList({ showToast }) {
               style={{ paddingLeft: '38px' }}
               placeholder="Search employees by name, phone, or address..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
         </div>
@@ -232,7 +259,7 @@ export default function EmployeeList({ showToast }) {
                 </tr>
               </thead>
               <tbody>
-                {filteredEmployees.map((emp) => (
+                {paginatedEmployees.map((emp) => (
                   <tr key={emp.id}>
                     <td style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 8px' }}>
                       <div style={{
@@ -283,6 +310,39 @@ export default function EmployeeList({ showToast }) {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {filteredEmployees.length > 0 && (
+          <div className="pagination-container">
+            <span className="pagination-info">
+              Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} entries
+            </span>
+            <div className="pagination-buttons">
+              <button 
+                className="btn-pagination" 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              >
+                Previous
+              </button>
+              {getPageNumbers().map(page => (
+                <button
+                  key={page}
+                  className={`btn-pagination-number ${currentPage === page ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button 
+                className="btn-pagination" 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>

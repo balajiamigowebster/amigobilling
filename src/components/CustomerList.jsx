@@ -5,6 +5,8 @@ import { API_URL } from '../config';
 export default function CustomerList({ onNavigate, openRegisterModal, onCloseRegisterModal, onSaveSuccess }) {
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const [leads, setLeads] = useState([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [nextCustomerId, setNextCustomerId] = useState('');
@@ -235,6 +237,28 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
     );
   });
 
+  const totalItems = filteredCustomers.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedCustomers = filteredCustomers.slice(startIndex, endIndex);
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - 2);
+    let end = Math.min(totalPages, start + maxVisible - 1);
+    
+    if (end - start < maxVisible - 1) {
+      start = Math.max(1, end - maxVisible + 1);
+    }
+    
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    return pages;
+  };
+
   return (
     <div>
       <div className="card-header-flex" style={{ marginBottom: '24px' }}>
@@ -269,7 +293,10 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
               style={{ paddingLeft: '38px' }}
               placeholder="Search by customer name, mobile, ID, or city..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
         </div>
@@ -295,7 +322,7 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
                 </tr>
               </thead>
               <tbody>
-                {filteredCustomers.map((customer) => (
+                {paginatedCustomers.map((customer) => (
                   <tr key={customer.id}>
                     <td style={{ fontWeight: 600, color: 'var(--primary)' }}>{customer.customer_id_seq}</td>
                     <td style={{ fontWeight: 600, whiteSpace: 'normal', minWidth: '140px' }}>{customer.customer_name}</td>
@@ -326,6 +353,39 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {filteredCustomers.length > 0 && (
+          <div className="pagination-container">
+            <span className="pagination-info">
+              Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} entries
+            </span>
+            <div className="pagination-buttons">
+              <button 
+                className="btn-pagination" 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              >
+                Previous
+              </button>
+              {getPageNumbers().map(page => (
+                <button
+                  key={page}
+                  className={`btn-pagination-number ${currentPage === page ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button 
+                className="btn-pagination" 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>
