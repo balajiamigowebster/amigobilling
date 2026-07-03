@@ -21,8 +21,8 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const [meetings, setMeetings] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [chartType, setChartType] = useState('bar');
+  const [hoveredIndexBar, setHoveredIndexBar] = useState(null);
+  const [hoveredIndexLine, setHoveredIndexLine] = useState(null);
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -532,66 +532,22 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
         </div>
       </div>
 
-      {/* Yearly Profit & Revenue Trend Chart */}
+      {/* Monthly Income & Expenses Breakdown Bar Chart */}
       <div className="card" style={{ padding: '24px', marginBottom: '24px', position: 'relative' }}>
         <style dangerouslySetInnerHTML={{ __html: animationStyle }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h3 className="card-title" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Yearly Income & Expenses Breakdown ({currentYear})</h3>
-            <p className="card-subtitle">Monthly breakdown of agency revenue, expenses, and net profit.</p>
+            <h3 className="card-title" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Monthly Income & Expenses Breakdown ({currentYear})</h3>
+            <p className="card-subtitle">Month-wise comparison of monthly revenue (income) vs expenses.</p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-            {/* Chart Type Toggle */}
-            <div style={{ display: 'flex', border: '1px solid var(--border-color)', borderRadius: '6px', overflow: 'hidden', backgroundColor: 'var(--bg-primary)' }}>
-              <button 
-                type="button" 
-                onClick={() => setChartType('bar')}
-                style={{
-                  padding: '5px 12px',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  border: 'none',
-                  cursor: 'pointer',
-                  backgroundColor: chartType === 'bar' ? 'var(--primary)' : 'transparent',
-                  color: chartType === 'bar' ? '#ffffff' : 'var(--text-secondary)',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Bar Chart
-              </button>
-              <button 
-                type="button" 
-                onClick={() => setChartType('line')}
-                style={{
-                  padding: '5px 12px',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  border: 'none',
-                  cursor: 'pointer',
-                  backgroundColor: chartType === 'line' ? 'var(--primary)' : 'transparent',
-                  color: chartType === 'line' ? '#ffffff' : 'var(--text-secondary)',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Line Chart
-              </button>
+          <div style={{ display: 'flex', gap: '16px', fontSize: '0.82rem', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--primary)' }}></span>
+              <span style={{ color: 'var(--text-secondary)' }}>Income</span>
             </div>
-
-            <div style={{ display: 'flex', gap: '16px', fontSize: '0.82rem', fontWeight: 600 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--primary)' }}></span>
-                <span style={{ color: 'var(--text-secondary)' }}>Income</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--danger)' }}></span>
-                <span style={{ color: 'var(--text-secondary)' }}>Expenses</span>
-              </div>
-              {chartType === 'line' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--success)' }}></span>
-                  <span style={{ color: 'var(--text-secondary)' }}>Profit</span>
-                </div>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--danger)' }}></span>
+              <span style={{ color: 'var(--text-secondary)' }}>Expenses</span>
             </div>
           </div>
         </div>
@@ -599,14 +555,6 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
         <div style={{ position: 'relative', width: '100%' }}>
           <svg viewBox="0 0 800 220" width="100%" height="auto" style={{ overflow: 'visible' }}>
             <defs>
-              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
-              </linearGradient>
-              <linearGradient id="chartGradientProf" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--success)" stopOpacity="0.2" />
-                <stop offset="100%" stopColor="var(--success)" stopOpacity="0.0" />
-              </linearGradient>
               <linearGradient id="barGradientRev" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--primary)" />
                 <stop offset="100%" stopColor="hsl(260, 85%, 65%)" stopOpacity="0.85" />
@@ -655,140 +603,59 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
               />
             )}
 
-            {chartType === 'bar' ? (
-              // Grouped Bar Chart Mode
-              <g>
-                {points.map((pt, i) => {
-                  const d = monthsData[i];
-                  const monthWidth = chartWidth / 12;
-                  const xCenter = paddingLeft + i * monthWidth + monthWidth / 2;
-                  
-                  const barWidth = 14;
-                  const gap = 2;
-                  
-                  // Height scale matches scaleMax
-                  const revHeight = d.revenue > 0 ? (d.revenue / scaleMax) * chartHeight : 0;
-                  const expHeight = d.expenses > 0 ? (d.expenses / scaleMax) * chartHeight : 0;
-                  
-                  const revY = paddingTop + chartHeight - revHeight;
-                  const expY = paddingTop + chartHeight - expHeight;
-                  
-                  return (
-                    <g key={i}>
-                      {/* Income/Revenue Bar */}
-                      {d.revenue > 0 && (
-                        <rect
-                          x={xCenter - barWidth - gap}
-                          y={revY}
-                          width={barWidth}
-                          height={revHeight}
-                          fill="url(#barGradientRev)"
-                          rx={3}
-                          className="bar-rect"
-                          style={{
-                            transformOrigin: `${xCenter - barWidth/2 - gap}px ${paddingTop + chartHeight}px`
-                          }}
-                        />
-                      )}
-                      
-                      {/* Expenses Bar */}
-                      {d.expenses > 0 && (
-                        <rect
-                          x={xCenter + gap}
-                          y={expY}
-                          width={barWidth}
-                          height={expHeight}
-                          fill="url(#barGradientExp)"
-                          rx={3}
-                          className="bar-rect"
-                          style={{
-                            transformOrigin: `${xCenter + barWidth/2 + gap}px ${paddingTop + chartHeight}px`
-                          }}
-                        />
-                      )}
-                    </g>
-                  );
-                })}
-              </g>
-            ) : (
-              // Line Chart Mode
-              <g>
-                {/* Area Path for Profit */}
-                {areaPathProf && (
-                  <path
-                    d={areaPathProf}
-                    fill="url(#chartGradientProf)"
-                    className="chart-area"
-                  />
-                )}
-
-                {/* Curve Line Path - Revenue */}
-                {linePathRev && (
-                  <path
-                    d={linePathRev}
-                    fill="none"
-                    stroke="var(--primary)"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                    className="chart-line"
-                  />
-                )}
-
-                {/* Curve Line Path - Expenses */}
-                {linePathExp && (
-                  <path
-                    d={linePathExp}
-                    fill="none"
-                    stroke="var(--danger)"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                    className="chart-line"
-                  />
-                )}
-
-                {/* Curve Line Path - Profit */}
-                {linePathProf && (
-                  <path
-                    d={linePathProf}
-                    fill="none"
-                    stroke="var(--success)"
-                    strokeWidth={3.5}
-                    strokeLinecap="round"
-                    className="chart-line"
-                  />
-                )}
-
-                {/* Interactive Dots for Data Points */}
-                {points.map((pt, idx) => (
-                  <g key={idx}>
-                    <circle
-                      cx={pt.x}
-                      cy={pt.yRev}
-                      r={3.5}
-                      fill="var(--bg-card)"
-                      stroke="var(--primary)"
-                      strokeWidth={2}
-                    />
-                    <circle
-                      cx={pt.x}
-                      cy={pt.yExp}
-                      r={3.5}
-                      fill="var(--bg-card)"
-                      stroke="var(--danger)"
-                      strokeWidth={2}
-                    />
-                    <circle
-                      cx={pt.x}
-                      cy={pt.yProf}
-                      r={4}
-                      fill="var(--bg-card)"
-                      stroke="var(--success)"
-                      strokeWidth={2.5}
-                    />
+            {/* Grouped Bar Chart Mode */}
+            <g>
+              {points.map((pt, i) => {
+                const d = monthsData[i];
+                const monthWidth = chartWidth / 12;
+                const xCenter = paddingLeft + i * monthWidth + monthWidth / 2;
+                
+                const barWidth = 14;
+                const gap = 2;
+                
+                const revHeight = d.revenue > 0 ? (d.revenue / scaleMax) * chartHeight : 0;
+                const expHeight = d.expenses > 0 ? (d.expenses / scaleMax) * chartHeight : 0;
+                
+                const revY = paddingTop + chartHeight - revHeight;
+                const expY = paddingTop + chartHeight - expHeight;
+                
+                return (
+                  <g key={i}>
+                    {/* Income/Revenue Bar */}
+                    {d.revenue > 0 && (
+                      <rect
+                        x={xCenter - barWidth - gap}
+                        y={revY}
+                        width={barWidth}
+                        height={revHeight}
+                        fill="url(#barGradientRev)"
+                        rx={3}
+                        className="bar-rect"
+                        style={{
+                          transformOrigin: `${xCenter - barWidth/2 - gap}px ${paddingTop + chartHeight}px`
+                        }}
+                      />
+                    )}
+                    
+                    {/* Expenses Bar */}
+                    {d.expenses > 0 && (
+                      <rect
+                        x={xCenter + gap}
+                        y={expY}
+                        width={barWidth}
+                        height={expHeight}
+                        fill="url(#barGradientExp)"
+                        rx={3}
+                        className="bar-rect"
+                        style={{
+                          transformOrigin: `${xCenter + barWidth/2 + gap}px ${paddingTop + chartHeight}px`
+                        }}
+                      />
+                    )}
                   </g>
-                ))}
-              </g>
-            )}
+                );
+              })}
+            </g>
 
             {/* X-Axis Labels */}
             {points.map((pt, idx) => (
@@ -804,11 +671,11 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
             ))}
 
             {/* Vertical guidelines on hover */}
-            {hoveredIndex !== null && (
+            {hoveredIndexBar !== null && (
               <line
-                x1={points[hoveredIndex].x}
+                x1={points[hoveredIndexBar].x}
                 y1={paddingTop}
-                x2={points[hoveredIndex].x}
+                x2={points[hoveredIndexBar].x}
                 y2={paddingTop + chartHeight}
                 stroke="var(--primary)"
                 strokeDasharray="4 4"
@@ -827,19 +694,19 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
                 height={chartHeight}
                 fill="transparent"
                 style={{ cursor: 'pointer' }}
-                onMouseEnter={() => setHoveredIndex(i)}
-                onMouseLeave={() => setHoveredIndex(null)}
+                onMouseEnter={() => setHoveredIndexBar(i)}
+                onMouseLeave={() => setHoveredIndexBar(null)}
               />
             ))}
           </svg>
 
           {/* Interactive Tooltip */}
-          {hoveredIndex !== null && (
+          {hoveredIndexBar !== null && (
             <div
               style={{
                 position: 'absolute',
-                left: `${(points[hoveredIndex].x / width) * 100}%`,
-                top: `${Math.min(points[hoveredIndex].yRev, points[hoveredIndex].yExp, points[hoveredIndex].yProf) - 95}px`,
+                left: `${(points[hoveredIndexBar].x / width) * 100}%`,
+                top: `${Math.min(points[hoveredIndexBar].yRev, points[hoveredIndexBar].yExp) - 95}px`,
                 transform: 'translateX(-50%)',
                 backgroundColor: 'rgba(30, 41, 59, 0.96)',
                 color: '#ffffff',
@@ -857,20 +724,260 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
               }}
             >
               <span style={{ fontSize: '0.82rem', color: 'hsl(215, 20%, 80%)', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px', marginBottom: '4px', textAlign: 'center' }}>
-                {points[hoveredIndex].label} {currentYear}
+                {points[hoveredIndexBar].label} {currentYear}
               </span>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
                 <span style={{ color: 'hsl(215, 20%, 80%)' }}>Income:</span>
-                <span style={{ fontWeight: 600 }}>₹{points[hoveredIndex].revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                <span style={{ fontWeight: 600 }}>₹{points[hoveredIndexBar].revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
                 <span style={{ color: 'hsl(215, 20%, 80%)' }}>Expenses:</span>
-                <span style={{ fontWeight: 600, color: 'hsl(10, 95%, 75%)' }}>₹{points[hoveredIndex].expenses.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+                <span style={{ fontWeight: 600, color: 'hsl(10, 95%, 75%)' }}>₹{points[hoveredIndexBar].expenses.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '4px', marginTop: '4px' }}>
+                <span style={{ color: 'hsl(215, 20%, 80%)', fontWeight: 600 }}>Net Gain:</span>
+                <span style={{ fontWeight: 700, color: points[hoveredIndexBar].profit >= 0 ? 'hsl(145, 80%, 75%)' : 'hsl(355, 85%, 75%)' }}>
+                  ₹{points[hoveredIndexBar].profit.toLocaleString('en-IN', { maximumFractionDigits: 0 })}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Yearly Profit & Revenue Trend Line Chart */}
+      <div className="card" style={{ padding: '24px', marginBottom: '24px', position: 'relative' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
+          <div>
+            <h3 className="card-title" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Yearly Profit & Revenue Trend ({currentYear})</h3>
+            <p className="card-subtitle">Monthly trend lines showing revenue (income), expenses, and net profit.</p>
+          </div>
+          <div style={{ display: 'flex', gap: '16px', fontSize: '0.82rem', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--primary)' }}></span>
+              <span style={{ color: 'var(--text-secondary)' }}>Revenue</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--danger)' }}></span>
+              <span style={{ color: 'var(--text-secondary)' }}>Expenses</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '4px', backgroundColor: 'var(--success)' }}></span>
+              <span style={{ color: 'var(--text-secondary)' }}>Profit</span>
+            </div>
+          </div>
+        </div>
+
+        <div style={{ position: 'relative', width: '100%' }}>
+          <svg viewBox="0 0 800 220" width="100%" height="auto" style={{ overflow: 'visible' }}>
+            <defs>
+              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--primary)" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="var(--primary)" stopOpacity="0.0" />
+              </linearGradient>
+              <linearGradient id="chartGradientProf" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--success)" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="var(--success)" stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            {/* Horizontal Gridlines */}
+            {yTicks.map((tick, idx) => {
+              const y = paddingTop + chartHeight - tick * chartHeight;
+              return (
+                <g key={idx}>
+                  <line
+                    x1={paddingLeft}
+                    y1={y}
+                    x2={width - paddingRight}
+                    y2={y}
+                    stroke="hsl(220, 15%, 93%)"
+                    strokeWidth={1}
+                  />
+                  <text
+                    x={paddingLeft - 12}
+                    y={y + 4}
+                    textAnchor="end"
+                    style={{ fontSize: '0.72rem', fill: 'var(--text-muted)', fontWeight: 600 }}
+                  >
+                    {formatYLabel(scaleMin + tick * scaleRange)}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* 0 Baseline Line */}
+            {scaleMin < 0 && (
+              <line
+                x1={paddingLeft}
+                y1={yZero}
+                x2={width - paddingRight}
+                y2={yZero}
+                stroke="hsl(220, 15%, 70%)"
+                strokeWidth={1.5}
+                strokeDasharray="4 4"
+              />
+            )}
+
+            {/* Line Chart Mode */}
+            <g>
+              {/* Area Path for Profit */}
+              {areaPathProf && (
+                <path
+                  d={areaPathProf}
+                  fill="url(#chartGradientProf)"
+                  className="chart-area"
+                />
+              )}
+
+              {/* Curve Line Path - Revenue */}
+              {linePathRev && (
+                <path
+                  d={linePathRev}
+                  fill="none"
+                  stroke="var(--primary)"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  className="chart-line"
+                />
+              )}
+
+              {/* Curve Line Path - Expenses */}
+              {linePathExp && (
+                <path
+                  d={linePathExp}
+                  fill="none"
+                  stroke="var(--danger)"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  className="chart-line"
+                />
+              )}
+
+              {/* Curve Line Path - Profit */}
+              {linePathProf && (
+                <path
+                  d={linePathProf}
+                  fill="none"
+                  stroke="var(--success)"
+                  strokeWidth={3.5}
+                  strokeLinecap="round"
+                  className="chart-line"
+                />
+              )}
+
+              {/* Interactive Dots for Data Points */}
+              {points.map((pt, idx) => (
+                <g key={idx}>
+                  <circle
+                    cx={pt.x}
+                    cy={pt.yRev}
+                    r={3.5}
+                    fill="var(--bg-card)"
+                    stroke="var(--primary)"
+                    strokeWidth={2}
+                  />
+                  <circle
+                    cx={pt.x}
+                    cy={pt.yExp}
+                    r={3.5}
+                    fill="var(--bg-card)"
+                    stroke="var(--danger)"
+                    strokeWidth={2}
+                  />
+                  <circle
+                    cx={pt.x}
+                    cy={pt.yProf}
+                    r={4}
+                    fill="var(--bg-card)"
+                    stroke="var(--success)"
+                    strokeWidth={2.5}
+                  />
+                </g>
+              ))}
+            </g>
+
+            {/* X-Axis Labels */}
+            {points.map((pt, idx) => (
+              <text
+                key={idx}
+                x={pt.x}
+                y={height - 5}
+                textAnchor="middle"
+                style={{ fontSize: '0.75rem', fill: 'var(--text-secondary)', fontWeight: 600 }}
+              >
+                {pt.label}
+              </text>
+            ))}
+
+            {/* Vertical guidelines on hover */}
+            {hoveredIndexLine !== null && (
+              <line
+                x1={points[hoveredIndexLine].x}
+                y1={paddingTop}
+                x2={points[hoveredIndexLine].x}
+                y2={paddingTop + chartHeight}
+                stroke="var(--primary)"
+                strokeDasharray="4 4"
+                strokeWidth={1.5}
+                opacity={0.4}
+              />
+            )}
+
+            {/* Hover overlay hitboxes */}
+            {points.map((pt, i) => (
+              <rect
+                key={i}
+                x={pt.x - chartWidth / 22}
+                y={paddingTop}
+                width={chartWidth / 11}
+                height={chartHeight}
+                fill="transparent"
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={() => setHoveredIndexLine(i)}
+                onMouseLeave={() => setHoveredIndexLine(null)}
+              />
+            ))}
+          </svg>
+
+          {/* Interactive Tooltip */}
+          {hoveredIndexLine !== null && (
+            <div
+              style={{
+                position: 'absolute',
+                left: `${(points[hoveredIndexLine].x / width) * 100}%`,
+                top: `${Math.min(points[hoveredIndexLine].yRev, points[hoveredIndexLine].yExp, points[hoveredIndexLine].yProf) - 95}px`,
+                transform: 'translateX(-50%)',
+                backgroundColor: 'rgba(30, 41, 59, 0.96)',
+                color: '#ffffff',
+                padding: '10px 14px',
+                borderRadius: '10px',
+                boxShadow: 'var(--shadow-lg)',
+                pointerEvents: 'none',
+                zIndex: 10,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px',
+                minWidth: '180px',
+                transition: 'left 0.1s ease, top 0.1s ease',
+                fontSize: '0.78rem'
+              }}
+            >
+              <span style={{ fontSize: '0.82rem', color: 'hsl(215, 20%, 80%)', fontWeight: 700, borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '4px', marginBottom: '4px', textAlign: 'center' }}>
+                {points[hoveredIndexLine].label} {currentYear}
+              </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+                <span style={{ color: 'hsl(215, 20%, 80%)' }}>Revenue:</span>
+                <span style={{ fontWeight: 600 }}>₹{points[hoveredIndexLine].revenue.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px' }}>
+                <span style={{ color: 'hsl(215, 20%, 80%)' }}>Expenses:</span>
+                <span style={{ fontWeight: 600, color: 'hsl(10, 95%, 75%)' }}>₹{points[hoveredIndexLine].expenses.toLocaleString('en-IN', { maximumFractionDigits: 0 })}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '4px', marginTop: '4px' }}>
                 <span style={{ color: 'hsl(215, 20%, 80%)', fontWeight: 600 }}>Profit:</span>
-                <span style={{ fontWeight: 700, color: points[hoveredIndex].profit >= 0 ? 'hsl(145, 80%, 75%)' : 'hsl(355, 85%, 75%)' }}>
-                  ₹{points[hoveredIndex].profit.toLocaleString('en-IN', { maximumFractionDigits: 0 })} ({ (points[hoveredIndex].revenue > 0 ? (points[hoveredIndex].profit / points[hoveredIndex].revenue) * 100 : 0).toFixed(0) }%)
+                <span style={{ fontWeight: 700, color: points[hoveredIndexLine].profit >= 0 ? 'hsl(145, 80%, 75%)' : 'hsl(355, 85%, 75%)' }}>
+                  ₹{points[hoveredIndexLine].profit.toLocaleString('en-IN', { maximumFractionDigits: 0 })} ({ (points[hoveredIndexLine].revenue > 0 ? (points[hoveredIndexLine].profit / points[hoveredIndexLine].revenue) * 100 : 0).toFixed(0) }%)
                 </span>
               </div>
             </div>
