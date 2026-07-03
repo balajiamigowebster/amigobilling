@@ -374,7 +374,7 @@ app.get('/api/invoices/next-no', async (req, res) => {
 
 // Save invoice
 app.post('/api/invoices', async (req, res) => {
-  const { invoiceNo, patientId, items, amount, advancePaid, status, invoiceDate, gstRate } = req.body;
+  const { invoiceNo, patientId, items, amount, advancePaid, advancePaymentDate, finalPaymentDate, status, invoiceDate, gstRate } = req.body;
 
   if (!patientId || !items || !amount || !invoiceDate) {
     return res.status(400).json({ error: 'Customer, Items, Total Amount, and Date are required.' });
@@ -411,9 +411,9 @@ app.post('/api/invoices', async (req, res) => {
     const itemsStr = JSON.stringify(items);
 
     const result = await db.query(
-      `INSERT INTO invoices (invoice_no, customer_id_seq, customer_name, service_name, items, amount, advance_paid, status, invoice_date, gst_rate) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [finalInvNo, customer_id_seq, customer_name, serviceName, itemsStr, parseFloat(amount), parseFloat(advancePaid || 0), status || 'Paid', invoiceDate, parseFloat(gstRate !== undefined ? gstRate : 18.00)]
+      `INSERT INTO invoices (invoice_no, customer_id_seq, customer_name, service_name, items, amount, advance_paid, advance_payment_date, final_payment_date, status, invoice_date, gst_rate) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [finalInvNo, customer_id_seq, customer_name, serviceName, itemsStr, parseFloat(amount), parseFloat(advancePaid || 0), advancePaymentDate || null, finalPaymentDate || null, status || 'Paid', invoiceDate, parseFloat(gstRate !== undefined ? gstRate : 18.00)]
     );
 
     res.status(201).json({ id: result.insertId, invoiceNo: finalInvNo, message: 'Invoice saved successfully.' });
@@ -426,7 +426,7 @@ app.post('/api/invoices', async (req, res) => {
 // Update invoice
 const updateInvoice = async (req, res) => {
   const { id } = req.params;
-  const { items, amount, advancePaid, status, invoiceDate, gstRate } = req.body;
+  const { items, amount, advancePaid, advancePaymentDate, finalPaymentDate, status, invoiceDate, gstRate } = req.body;
 
   try {
     // Determine summary service name
@@ -437,8 +437,8 @@ const updateInvoice = async (req, res) => {
     const itemsStr = JSON.stringify(items);
 
     await db.query(
-      'UPDATE invoices SET service_name = ?, items = ?, amount = ?, advance_paid = ?, status = ?, invoice_date = ?, gst_rate = ? WHERE id = ?',
-      [serviceName, itemsStr, parseFloat(amount), parseFloat(advancePaid || 0), status, invoiceDate, parseFloat(gstRate !== undefined ? gstRate : 18.00), id]
+      'UPDATE invoices SET service_name = ?, items = ?, amount = ?, advance_paid = ?, advance_payment_date = ?, final_payment_date = ?, status = ?, invoice_date = ?, gst_rate = ? WHERE id = ?',
+      [serviceName, itemsStr, parseFloat(amount), parseFloat(advancePaid || 0), advancePaymentDate || null, finalPaymentDate || null, status, invoiceDate, parseFloat(gstRate !== undefined ? gstRate : 18.00), id]
     );
     res.json({ message: 'Invoice updated successfully.' });
   } catch (error) {
@@ -626,6 +626,103 @@ const deleteExpense = async (req, res) => {
 };
 app.delete('/api/expenses/:id', deleteExpense);
 app.post('/api/expenses/:id/delete', deleteExpense);
+
+
+// ================= PROJECT ASSIGNMENT ROUTES =================
+
+// Get all project assignments
+app.get('/api/project-assignments', async (req, res) => {
+  try {
+    const assignments = await db.query(`
+      SELECT pa.*, e.employee_name, c.customer_name, c.customer_id_seq, c.project_brief
+      FROM project_assignments pa
+      JOIN employees e ON pa.employee_id = e.id
+      JOIN customers c ON pa.customer_id = c.id
+      ORDER BY pa.id DESC
+    `);
+    res.json(assignments);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch project assignments.' });
+  }
+});
+
+// Save project assignment
+app.post('/api/project-assignments', async (req, res) => {
+  const { employeeId, customerId, assignedRole, assignedDate, notes } = req.body;
+
+  if (!employeeId || !customerId || !assignedDate) {
+    return res.status(400).json({ error: 'Employee, Project/Customer, and Assignment Date are required.' });
+  }
+
+  try {
+    // Check if duplicate assignment exists
+    const existing = await db.query(
+      'SELECT id FROM project_assignments WHERE employee_id = ? AND customer_id = ?',
+      [parseInt(employeeId), parseInt(customerId)]
+    );
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'This employee is already assigned to this project.' });
+    }
+
+    const result = await db.query(
+      'INSERT INTO project_assignments (employee_id, customer_id, assigned_role, assigned_date, notes) VALUES (?, ?, ?, ?, ?)',
+      [parseInt(employeeId), parseInt(customerId), assignedRole || 'Developer', assignedDate, notes || null]
+    );
+
+    res.status(201).json({ id: result.insertId, message: 'Employee assigned to project successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to assign employee to project.' });
+  }
+});
+
+// Update project assignment
+const updateProjectAssignment = async (req, res) => {
+  const { id } = req.params;
+  const { employeeId, customerId, assignedRole, assignedDate, notes } = req.body;
+
+  if (!employeeId || !customerId || !assignedDate) {
+    return res.status(400).json({ error: 'Employee, Project/Customer, and Assignment Date are required.' });
+  }
+
+  try {
+    // Check duplicate assignment excluding the current one
+    const existing = await db.query(
+      'SELECT id FROM project_assignments WHERE employee_id = ? AND customer_id = ? AND id != ?',
+      [parseInt(employeeId), parseInt(customerId), id]
+    );
+    if (existing.length > 0) {
+      return res.status(400).json({ error: 'This employee is already assigned to this project.' });
+    }
+
+    await db.query(
+      'UPDATE project_assignments SET employee_id = ?, customer_id = ?, assigned_role = ?, assigned_date = ?, notes = ? WHERE id = ?',
+      [parseInt(employeeId), parseInt(customerId), assignedRole || 'Developer', assignedDate, notes || null, id]
+    );
+
+    res.json({ message: 'Project assignment updated successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update project assignment.' });
+  }
+};
+app.put('/api/project-assignments/:id', updateProjectAssignment);
+app.post('/api/project-assignments/:id/update', updateProjectAssignment);
+
+// Delete project assignment
+const deleteProjectAssignment = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM project_assignments WHERE id = ?', [id]);
+    res.json({ message: 'Project assignment removed successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete project assignment.' });
+  }
+};
+app.delete('/api/project-assignments/:id', deleteProjectAssignment);
+app.post('/api/project-assignments/:id/delete', deleteProjectAssignment);
 
 
 // ================= GLOBAL ERROR HANDLING =================

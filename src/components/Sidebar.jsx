@@ -12,7 +12,8 @@ import {
   LogOut,
   Sparkles,
   UserCheck,
-  Receipt
+  Receipt,
+  FolderGit
 } from 'lucide-react';
 
 export default function Sidebar({ 
@@ -33,6 +34,7 @@ export default function Sidebar({
     { id: 'billing', label: 'Billing', icon: CreditCard },
     { id: 'proposals', label: 'Proposals', icon: Briefcase },
     { id: 'employees', label: 'Employees', icon: UserCheck },
+    { id: 'project-assignments', label: 'Project Allocation', icon: FolderGit },
     { id: 'expenses', label: 'Expenses', icon: Receipt },
     { id: 'reports', label: 'Reports', icon: TrendingUp },
   ];

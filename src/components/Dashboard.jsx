@@ -2,6 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Users, IndianRupee, Briefcase, AlertCircle, Plus, Calendar, Video, TrendingUp, TrendingDown } from 'lucide-react';
 import { API_URL } from '../config';
 
+const formatDateSafe = (dateStr) => {
+  if (!dateStr) return '—';
+  const cleanStr = dateStr.slice(0, 10);
+  const parts = cleanStr.slice(0, 10).split('-');
+  if (parts.length !== 3) return dateStr;
+  const year = parts[0];
+  const monthIndex = parseInt(parts[1], 10) - 1;
+  const day = parts[2];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${day} ${months[monthIndex] || ''} ${year}`;
+};
+
 export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const [customers, setCustomers] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -85,31 +97,59 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   };
 
   const today = new Date().toLocaleDateString('sv');
-  const todayRevenue = invoices
-    .filter(inv => {
-      const { year, month, day } = parseLocalDate(inv.invoice_date);
-      const formattedDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      return formattedDate === today && inv.status === 'Paid';
-    })
-    .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
-
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth();
 
-  const monthRevenue = invoices
-    .filter(inv => {
-      const { year, month } = parseLocalDate(inv.invoice_date);
-      return year === currentYear && month === currentMonth && inv.status === 'Paid';
-    })
-    .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
+  // Helper to extract all payment events dynamically:
+  // - Advance payment of amount `advance_paid` is received on `advance_payment_date` (or `invoice_date`)
+  // - Remaining payment of amount `amount - advance_paid` is received on `final_payment_date` (or `invoice_date`) when status is 'Paid'
+  const paymentEvents = [];
+  invoices.forEach(inv => {
+    const amt = parseFloat(inv.amount) || 0;
+    const adv = parseFloat(inv.advance_paid) || 0;
+    
+    // 1. Advance Payment
+    if (adv > 0) {
+      const advDate = inv.advance_payment_date 
+        ? inv.advance_payment_date.slice(0, 10) 
+        : inv.invoice_date.slice(0, 10);
+      paymentEvents.push({
+        amount: adv,
+        date: advDate
+      });
+    }
+    
+    // 2. Final Payment (only if marked Paid)
+    if (inv.status === 'Paid') {
+      const finalAmt = amt - adv;
+      if (finalAmt > 0) {
+        const finalDate = inv.final_payment_date 
+          ? inv.final_payment_date.slice(0, 10) 
+          : inv.invoice_date.slice(0, 10);
+        paymentEvents.push({
+          amount: finalAmt,
+          date: finalDate
+        });
+      }
+    }
+  });
 
-  const yearRevenue = invoices
-    .filter(inv => {
-      const { year } = parseLocalDate(inv.invoice_date);
-      return year === currentYear && inv.status === 'Paid';
+  // Calculate revenue from payment events
+  const todayRevenue = paymentEvents
+    .filter(evt => evt.date === today)
+    .reduce((sum, evt) => sum + evt.amount, 0);
+
+  const monthRevenue = paymentEvents
+    .filter(evt => {
+      const { year, month } = parseLocalDate(evt.date);
+      return year === currentYear && month === currentMonth;
     })
-    .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
+    .reduce((sum, evt) => sum + evt.amount, 0);
+
+  const yearRevenue = paymentEvents
+    .filter(evt => parseLocalDate(evt.date).year === currentYear)
+    .reduce((sum, evt) => sum + evt.amount, 0);
 
   const yearExpenses = expenses
     .filter(exp => parseLocalDate(exp.expense_date).year === currentYear)
@@ -132,7 +172,7 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
 
   const pendingPayments = invoices
     .filter(inv => inv.status !== 'Paid')
-    .reduce((sum, inv) => sum + parseFloat(inv.amount), 0);
+    .reduce((sum, inv) => sum + (parseFloat(inv.amount) - (parseFloat(inv.advance_paid) || 0)), 0);
 
   // --- CHART CALCULATIONS ---
   const monthsData = Array.from({ length: 12 }, (_, i) => {
@@ -146,10 +186,10 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
     };
   });
 
-  invoices.forEach(inv => {
-    const { year, month } = parseLocalDate(inv.invoice_date);
-    if (year === currentYear && inv.status === 'Paid') {
-      monthsData[month].revenue += parseFloat(inv.amount);
+  paymentEvents.forEach(evt => {
+    const { year, month } = parseLocalDate(evt.date);
+    if (year === currentYear) {
+      monthsData[month].revenue += evt.amount;
     }
   });
 
@@ -266,6 +306,43 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
       </div>
     );
   }
+
+  // Collect payment transactions (including advance payments and final payments)
+  const payments = [];
+  invoices.forEach(inv => {
+    // If there is an advance payment, record it
+    if (parseFloat(inv.advance_paid) > 0) {
+      payments.push({
+        id: `adv-${inv.id}`,
+        invoiceNo: inv.invoice_no,
+        customerName: inv.customer_name,
+        serviceName: inv.service_name,
+        type: 'Advance Payment',
+        amount: parseFloat(inv.advance_paid),
+        date: inv.advance_payment_date ? inv.advance_payment_date.slice(0, 10) : inv.invoice_date.slice(0, 10),
+        status: 'Received'
+      });
+    }
+    // If the invoice is fully paid, record the main payment
+    if (inv.status === 'Paid') {
+      const mainAmount = parseFloat(inv.amount) - (parseFloat(inv.advance_paid) || 0);
+      if (mainAmount > 0) {
+        payments.push({
+          id: `full-${inv.id}`,
+          invoiceNo: inv.invoice_no,
+          customerName: inv.customer_name,
+          serviceName: inv.service_name,
+          type: 'Final Payment',
+          amount: mainAmount,
+          date: inv.final_payment_date ? inv.final_payment_date.slice(0, 10) : inv.invoice_date.slice(0, 10),
+          status: 'Received'
+        });
+      }
+    }
+  });
+
+  // Sort payments by date descending
+  payments.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   return (
     <div>
@@ -778,6 +855,71 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
             </div>
           )}
         </div>
+      </div>
+
+      {/* Recent Payments Section */}
+      <div className="card" style={{ gap: '16px', marginTop: '24px' }}>
+        <div className="card-header-flex">
+          <div>
+            <h3 className="card-title">Recent Payments Received</h3>
+            <p className="card-subtitle">Real-time log of client advance payments and final settlements.</p>
+          </div>
+          <button className="btn btn-secondary" onClick={() => onNavigate('billing')} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
+            View Billing Directory
+          </button>
+        </div>
+
+        {payments.length === 0 ? (
+          <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+            <IndianRupee size={40} style={{ opacity: .3, color: 'var(--success)' }} />
+            <p>No payment transactions recorded yet.</p>
+          </div>
+        ) : (
+          <div className="table-responsive-container" style={{ border: 'none' }}>
+            <table>
+              <thead>
+                <tr style={{ borderBottom: '1.5px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Payment Date</th>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Invoice No</th>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Client / Company</th>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Description</th>
+                  <th style={{ padding: '12px 8px', fontWeight: 600 }}>Payment Type</th>
+                  <th style={{ padding: '12px 8px', fontWeight: 700, textAlign: 'right' }}>Amount Received</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.slice(0, 5).map((pm) => (
+                  <tr key={pm.id} style={{ borderBottom: '1px solid var(--border-color)', fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                    <td style={{ padding: '12px 8px', fontWeight: 600 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Calendar size={14} style={{ color: 'var(--text-muted)' }} />
+                        <span>{formatDateSafe(pm.date)}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: '12px 8px', fontWeight: 600, color: 'var(--primary)' }}>{pm.invoiceNo}</td>
+                    <td style={{ padding: '12px 8px', fontWeight: 500 }}>{pm.customerName}</td>
+                    <td style={{ padding: '12px 8px', color: 'var(--text-secondary)' }}>{pm.serviceName}</td>
+                    <td style={{ padding: '12px 8px' }}>
+                      <span className="badge badge-status" style={{
+                        backgroundColor: pm.type === 'Advance Payment' ? 'var(--primary-light)' : 'var(--success-light)',
+                        color: pm.type === 'Advance Payment' ? 'var(--primary)' : 'var(--success)',
+                        padding: '4px 10px',
+                        borderRadius: '50px',
+                        fontSize: '0.78rem',
+                        fontWeight: 600
+                      }}>
+                        {pm.type}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 8px', fontWeight: 700, color: 'var(--success)', textAlign: 'right' }}>
+                      ₹{pm.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

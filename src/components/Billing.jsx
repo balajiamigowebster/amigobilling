@@ -33,6 +33,8 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
     treatmentName: '', // Maps to service name (summary)
     amount: '0',
     advancePaid: '0', // Advance paid field
+    advancePaymentDate: '', // Date advance was paid
+    finalPaymentDate: '', // Date final payment was received
     status: 'Paid',
     invoiceDate: new Date().toLocaleDateString('sv'),
     gstRate: '18'
@@ -154,6 +156,8 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
       treatmentName: '',
       amount: defaultItem.amount.toString(),
       advancePaid: '0',
+      advancePaymentDate: '',
+      finalPaymentDate: '',
       status: 'Paid',
       invoiceDate: new Date().toLocaleDateString('sv'),
       gstRate: '18'
@@ -204,6 +208,8 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
       treatmentName: invoice.service_name,
       amount: invoice.amount.toString(),
       advancePaid: (invoice.advance_paid || 0).toString(),
+      advancePaymentDate: invoice.advance_payment_date ? invoice.advance_payment_date.slice(0, 10) : '',
+      finalPaymentDate: invoice.final_payment_date ? invoice.final_payment_date.slice(0, 10) : '',
       status: invoice.status,
       invoiceDate: invoice.invoice_date.slice(0, 10),
       gstRate: (invoice.gst_rate !== undefined ? invoice.gst_rate : 18).toString()
@@ -245,7 +251,16 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
 
   const handleInputChange = (e) => {
     const { id, value } = e.target;
-    setForm(f => ({ ...f, [id]: value }));
+    setForm(f => {
+      const updated = { ...f, [id]: value };
+      if (id === 'advancePaid' && parseFloat(value) > 0 && !f.advancePaymentDate) {
+        updated.advancePaymentDate = new Date().toLocaleDateString('sv');
+      }
+      if (id === 'status' && value === 'Paid' && !f.finalPaymentDate) {
+        updated.finalPaymentDate = new Date().toLocaleDateString('sv');
+      }
+      return updated;
+    });
   };
 
   const handleSaveInvoice = async (e) => {
@@ -416,12 +431,28 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
                       <td style={{ whiteSpace: 'normal', minWidth: '140px' }}>{inv.service_name}</td>
                       <td style={{ fontWeight: 700 }}>₹{parseFloat(inv.amount).toFixed(2)}</td>
                       <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
-                        {parseFloat(inv.advance_paid || 0) > 0 ? `₹${parseFloat(inv.advance_paid).toFixed(2)}` : '—'}
+                        {parseFloat(inv.advance_paid || 0) > 0 ? (
+                          <div>
+                            <div>₹{parseFloat(inv.advance_paid).toFixed(2)}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
+                              Paid: {formatDateSafe(inv.advance_payment_date)}
+                            </div>
+                          </div>
+                        ) : '—'}
                       </td>
                       <td style={{ fontWeight: 600, color: pendingAmt > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
                         {pendingAmt > 0 ? `₹${pendingAmt.toFixed(2)}` : '—'}
                       </td>
-                      <td>{formatDateSafe(inv.invoice_date)}</td>
+                      <td>
+                        <div>
+                          <div style={{ fontWeight: 500 }}>{formatDateSafe(inv.invoice_date)}</div>
+                          {inv.status === 'Paid' && inv.final_payment_date && (
+                            <div style={{ fontSize: '0.72rem', color: 'var(--success)', fontWeight: 600, marginTop: '2px' }}>
+                              Paid: {formatDateSafe(inv.final_payment_date)}
+                            </div>
+                          )}
+                        </div>
+                      </td>
                       <td>
                         <span className={getStatusBadgeClass(inv.status)}>{inv.status}</span>
                       </td>
@@ -701,6 +732,20 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
                     />
                   </div>
 
+                  {parseFloat(form.advancePaid || 0) > 0 && (
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="advancePaymentDate">Advance Payment Date *</label>
+                      <input
+                        id="advancePaymentDate"
+                        type="date"
+                        className="form-input"
+                        value={form.advancePaymentDate}
+                        onChange={handleInputChange}
+                        required={parseFloat(form.advancePaid || 0) > 0}
+                      />
+                    </div>
+                  )}
+
                   <div className="form-group">
                     <label className="form-label">Balance Due (INR)</label>
                     <input
@@ -731,6 +776,20 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
                       <option value="Pending">Pending</option>
                     </select>
                   </div>
+
+                  {form.status === 'Paid' && (
+                    <div className="form-group">
+                      <label className="form-label" htmlFor="finalPaymentDate">Final Payment Date *</label>
+                      <input
+                        id="finalPaymentDate"
+                        type="date"
+                        className="form-input"
+                        value={form.finalPaymentDate}
+                        onChange={handleInputChange}
+                        required={form.status === 'Paid'}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 

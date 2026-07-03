@@ -181,6 +181,8 @@ async function createTables() {
       items TEXT NOT NULL, -- Stringified JSON array of line items
       amount DECIMAL(10, 2) NOT NULL, -- Total invoice amount
       advance_paid DECIMAL(10, 2) DEFAULT 0.00, -- Advance payment made
+      advance_payment_date DATE DEFAULT NULL, -- Date advance payment was received
+      final_payment_date DATE DEFAULT NULL, -- Date final payment was received / completed
       gst_rate DECIMAL(5, 2) DEFAULT 18.00, -- GST rate percentage
       status VARCHAR(20) DEFAULT 'Paid',
       invoice_date DATE NOT NULL
@@ -198,11 +200,33 @@ async function createTables() {
     console.error('Error adding advance_paid column during migration:', err.message);
   }
 
+  // Ensure advance_payment_date column exists in invoices
+  try {
+    const cols = await pool.query("SHOW COLUMNS FROM invoices LIKE 'advance_payment_date'");
+    if (cols[0].length === 0) {
+      await pool.query('ALTER TABLE invoices ADD COLUMN advance_payment_date DATE DEFAULT NULL AFTER advance_paid');
+      console.log('Database migrated: added advance_payment_date column to invoices table.');
+    }
+  } catch (err) {
+    console.error('Error adding advance_payment_date column during migration:', err.message);
+  }
+
+  // Ensure final_payment_date column exists in invoices
+  try {
+    const cols = await pool.query("SHOW COLUMNS FROM invoices LIKE 'final_payment_date'");
+    if (cols[0].length === 0) {
+      await pool.query('ALTER TABLE invoices ADD COLUMN final_payment_date DATE DEFAULT NULL AFTER advance_payment_date');
+      console.log('Database migrated: added final_payment_date column to invoices table.');
+    }
+  } catch (err) {
+    console.error('Error adding final_payment_date column during migration:', err.message);
+  }
+
   // Ensure gst_rate column exists in invoices
   try {
     const cols = await pool.query("SHOW COLUMNS FROM invoices LIKE 'gst_rate'");
     if (cols[0].length === 0) {
-      await pool.query('ALTER TABLE invoices ADD COLUMN gst_rate DECIMAL(5, 2) DEFAULT 18.00 AFTER advance_paid');
+      await pool.query('ALTER TABLE invoices ADD COLUMN gst_rate DECIMAL(5, 2) DEFAULT 18.00 AFTER advance_payment_date');
       console.log('Database migrated: added gst_rate column to invoices table.');
     }
   } catch (err) {
@@ -292,6 +316,50 @@ async function createTables() {
       console.log('Seeded initial expenses data.');
     } catch (err) {
       console.error('Error seeding expenses:', err.message);
+    }
+  }
+
+  // 8. Project Assignments table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS project_assignments (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      employee_id INT NOT NULL,
+      customer_id INT NOT NULL,
+      assigned_role VARCHAR(100) DEFAULT 'Developer',
+      assigned_date DATE NOT NULL,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE CASCADE,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE CASCADE,
+      UNIQUE KEY unique_emp_cust (employee_id, customer_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // Seed project assignments
+  const [assignCount] = await pool.query('SELECT COUNT(*) as count FROM project_assignments');
+  if (assignCount[0].count === 0) {
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const [emps] = await pool.query('SELECT id FROM employees LIMIT 2');
+      const [custs] = await pool.query('SELECT id FROM customers LIMIT 3');
+      
+      if (emps.length > 0 && custs.length > 0) {
+        const emp1 = emps[0].id;
+        const emp2 = emps[1] ? emps[1].id : emps[0].id;
+        const cust1 = custs[0].id;
+        const cust2 = custs[1] ? custs[1].id : custs[0].id;
+        const cust3 = custs[2] ? custs[2].id : custs[0].id;
+
+        await pool.query(`
+          INSERT IGNORE INTO project_assignments (employee_id, customer_id, assigned_role, assigned_date, notes) VALUES 
+          (?, ?, 'Frontend Developer', ?, 'Tasked with setting up Stripe payments UI.'),
+          (?, ?, 'Senior SEO Specialist', ?, 'Handling technical SEO crawl fixes and optimizations.'),
+          (?, ?, 'QA Engineer', ?, 'Verifying post updates and tracking link conversions.')
+        `, [emp1, cust1, todayStr, emp2, cust2, todayStr, emp1, cust3, todayStr]);
+        console.log('Seeded initial project assignments.');
+      }
+    } catch (err) {
+      console.error('Error seeding project assignments:', err.message);
     }
   }
 }
