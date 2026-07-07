@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { X, Printer } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 
 const getStateFromCity = (city) => {
   if (!city) return 'Tamil Nadu';
@@ -71,67 +73,147 @@ const WhatsAppIcon = ({ size = 16 }) => (
   </svg>
 );
 
-export default function InvoicePrint({ invoice, onClose }) {
+export default function InvoicePrint({ invoice, onClose, autoShare }) {
   if (!invoice) return null;
+
+  const printableRef = useRef(null);
+  const [sharing, setSharing] = useState(false);
+
+  useEffect(() => {
+    if (autoShare) {
+      const timer = setTimeout(() => {
+        handleSendWhatsApp().then(() => {
+          onClose();
+        }).catch(() => {
+          onClose();
+        });
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [autoShare]);
 
   const handlePrint = () => {
     window.print();
   };
 
-  const handleSendWhatsApp = () => {
-    const rawPhone = invoice.mobile_number || '';
-    const phone = rawPhone.replace(/\D/g, '');
-    const formattedPhone = phone.length === 10 ? '91' + phone : phone;
+  const handleSendWhatsApp = async () => {
+    if (sharing) return;
+    setSharing(true);
 
-    const subTotal = parseFloat(invoice.amount) || 0;
-    const customerState = getStateFromCity(invoice.city);
-    const isInterState = customerState.trim().toLowerCase() !== 'tamil nadu';
+    try {
+      const rawPhone = invoice.mobile_number || '';
+      const phone = rawPhone.replace(/\D/g, '');
+      const formattedPhone = phone.length === 10 ? '91' + phone : phone;
 
-    let cgstRate = 0;
-    let sgstRate = 0;
-    let igstRate = 0;
+      const subTotal = parseFloat(invoice.amount) || 0;
+      const customerState = getStateFromCity(invoice.city);
+      const isInterState = customerState.trim().toLowerCase() !== 'tamil nadu';
 
-    const gstRatePercent = invoice.gst_rate !== undefined ? parseFloat(invoice.gst_rate) : 18;
+      let cgstRate = 0;
+      let sgstRate = 0;
+      let igstRate = 0;
 
-    if (isInterState) {
-      igstRate = gstRatePercent;
-    } else {
-      cgstRate = gstRatePercent / 2;
-      sgstRate = cgstRate;
+      const gstRatePercent = invoice.gst_rate !== undefined ? parseFloat(invoice.gst_rate) : 18;
+
+      if (isInterState) {
+        igstRate = gstRatePercent;
+      } else {
+        cgstRate = gstRatePercent / 2;
+        sgstRate = cgstRate;
+      }
+
+      const cgstAmount = subTotal * (cgstRate / 100);
+      const sgstAmount = subTotal * (sgstRate / 100);
+      const igstAmount = subTotal * (igstRate / 100);
+      const taxTotal = cgstAmount + sgstAmount + igstAmount;
+      const grandTotal = subTotal + taxTotal;
+
+      const advancePaid = parseFloat(invoice.advance_paid) || 0;
+      const pendingAmt = invoice.status === 'Paid' ? 0 : Math.max(0, grandTotal - advancePaid);
+
+      let taxBreakdown = '';
+      if (isInterState) {
+        taxBreakdown = `• IGST (${igstRate}%): ₹${igstAmount.toFixed(2)}`;
+      } else {
+        taxBreakdown = `• CGST (${cgstRate}%): ₹${cgstAmount.toFixed(2)}\n• SGST (${sgstRate}%): ₹${sgstAmount.toFixed(2)}`;
+      }
+
+      const formatDateSafeLocal = (dateStr) => {
+        if (!dateStr) return '—';
+        const cleanStr = dateStr.slice(0, 10);
+        const parts = cleanStr.slice(0, 10).split('-');
+        if (parts.length !== 3) return dateStr;
+        const year = parts[0];
+        const monthIndex = parseInt(parts[1], 10) - 1;
+        const day = parts[2];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        return `${day} ${months[monthIndex] || ''} ${year}`;
+      };
+
+      const messageText = `Hello *${invoice.customer_name}*,\n\nYour invoice *${invoice.invoice_no}* for *${invoice.service_name}* has been generated.\n\n*Invoice Summary:*\n• Invoice No: ${invoice.invoice_no}\n• Date: ${formatDateSafeLocal(invoice.invoice_date)}\n• Subtotal: ₹${subTotal.toFixed(2)}\n${taxBreakdown}\n• Grand Total: ₹${grandTotal.toFixed(2)}\n• Advance Paid: ₹${advancePaid.toFixed(2)}\n• Pending Amount: ₹${pendingAmt.toFixed(2)}\n• Status: *${invoice.status}*\n\nThank you for choosing *Amigo Webster*!`;
+
+      const element = printableRef.current;
+      if (!element) {
+        throw new Error("Printable invoice element not found.");
+      }
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const pdfBlob = pdf.output('blob');
+      const filename = `Invoice-${invoice.invoice_no}.pdf`;
+      const pdfFile = new File([pdfBlob], filename, { type: 'application/pdf' });
+
+      const shareData = {
+        files: [pdfFile],
+        title: `Invoice ${invoice.invoice_no}`,
+        text: messageText
+      };
+
+      if (navigator.canShare && navigator.canShare(shareData)) {
+        await navigator.share(shareData);
+      } else {
+        const blobUrl = URL.createObjectURL(pdfBlob);
+        const downloadLink = document.createElement('a');
+        downloadLink.href = blobUrl;
+        downloadLink.download = filename;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(blobUrl);
+
+        try {
+          await navigator.clipboard.writeText(messageText);
+          alert("Invoice PDF downloaded successfully! The invoice summary text has been copied to your clipboard.\n\nOpening WhatsApp... Please paste the summary and attach the downloaded PDF in the chat.");
+        } catch (clipErr) {
+          alert("Invoice PDF downloaded successfully!\n\nOpening WhatsApp... Please attach the downloaded PDF in the chat.");
+        }
+
+        const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(messageText)}`;
+        window.open(whatsappUrl, '_blank');
+      }
+    } catch (err) {
+      console.error("Error generating/sharing PDF:", err);
+      alert("Failed to generate PDF. Opening text message fallback...");
+      const rawPhone = invoice.mobile_number || '';
+      const phone = rawPhone.replace(/\D/g, '');
+      const formattedPhone = phone.length === 10 ? '91' + phone : phone;
+      const message = `Hello *${invoice.customer_name}*,\n\nYour invoice *${invoice.invoice_no}* for *${invoice.service_name}* has been generated.\n\nThank you for choosing *Amigo Webster*!`;
+      const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+    } finally {
+      setSharing(false);
     }
-
-    const cgstAmount = subTotal * (cgstRate / 100);
-    const sgstAmount = subTotal * (sgstRate / 100);
-    const igstAmount = subTotal * (igstRate / 100);
-    const taxTotal = cgstAmount + sgstAmount + igstAmount;
-    const grandTotal = subTotal + taxTotal;
-
-    const advancePaid = parseFloat(invoice.advance_paid) || 0;
-    const pendingAmt = invoice.status === 'Paid' ? 0 : Math.max(0, grandTotal - advancePaid);
-
-    let taxBreakdown = '';
-    if (isInterState) {
-      taxBreakdown = `• IGST (${igstRate}%): ₹${igstAmount.toFixed(2)}`;
-    } else {
-      taxBreakdown = `• CGST (${cgstRate}%): ₹${cgstAmount.toFixed(2)}\n• SGST (${sgstRate}%): ₹${sgstAmount.toFixed(2)}`;
-    }
-
-    const formatDateSafeLocal = (dateStr) => {
-      if (!dateStr) return '—';
-      const cleanStr = dateStr.slice(0, 10);
-      const parts = cleanStr.slice(0, 10).split('-');
-      if (parts.length !== 3) return dateStr;
-      const year = parts[0];
-      const monthIndex = parseInt(parts[1], 10) - 1;
-      const day = parts[2];
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      return `${day} ${months[monthIndex] || ''} ${year}`;
-    };
-
-    const message = `Hello *${invoice.customer_name}*,\n\nYour invoice *${invoice.invoice_no}* for *${invoice.service_name}* has been generated.\n\n*Invoice Summary:*\n• Invoice No: ${invoice.invoice_no}\n• Date: ${formatDateSafeLocal(invoice.invoice_date)}\n• Subtotal: ₹${subTotal.toFixed(2)}\n${taxBreakdown}\n• Grand Total: ₹${grandTotal.toFixed(2)}\n• Advance Paid: ₹${advancePaid.toFixed(2)}\n• Pending Amount: ₹${pendingAmt.toFixed(2)}\n• Status: *${invoice.status}*\n\nThank you for choosing *Amigo Webster*!`;
-
-    const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
   };
 
   let parsedItems = [];
@@ -197,8 +279,13 @@ export default function InvoicePrint({ invoice, onClose }) {
             <button className="btn btn-primary" onClick={handlePrint} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
               <Printer size={16} /> Print
             </button>
-            <button className="btn btn-whatsapp" onClick={handleSendWhatsApp} style={{ padding: '8px 16px', fontSize: '0.85rem' }}>
-              <WhatsAppIcon size={16} /> Send to WhatsApp
+            <button 
+              className="btn btn-whatsapp" 
+              onClick={handleSendWhatsApp} 
+              disabled={sharing}
+              style={{ padding: '8px 16px', fontSize: '0.85rem' }}
+            >
+              <WhatsAppIcon size={16} /> {sharing ? 'Generating PDF...' : 'Send to WhatsApp'}
             </button>
             <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
               <X size={20} />
@@ -207,7 +294,7 @@ export default function InvoicePrint({ invoice, onClose }) {
         </div>
 
         {/* Invoice Printable Sheet */}
-        <div className="invoice-modal-body printable-invoice" style={{
+        <div ref={printableRef} className="invoice-modal-body printable-invoice" style={{
           padding: '12px 20px',
           backgroundColor: '#ffffff',
           color: '#333333',

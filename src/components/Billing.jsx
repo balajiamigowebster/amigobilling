@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Printer, Pencil, Trash2, Sparkles, AlertCircle, ShieldAlert, X, FileSpreadsheet } from 'lucide-react';
 import { API_URL } from '../config';
+import InvoicePrint from './InvoicePrint';
 
 const formatDateSafe = (dateStr) => {
   if (!dateStr) return '—';
@@ -97,6 +98,7 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
   const [showModal, setShowModal] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState(null);
   const [nextInvoiceNo, setNextInvoiceNo] = useState('');
+  const [autoShareInvoice, setAutoShareInvoice] = useState(null);
   
   // Form State
   const [form, setForm] = useState({
@@ -336,47 +338,7 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
   };
 
   const handleSendWhatsApp = (inv) => {
-    const rawPhone = inv.mobile_number || '';
-    const phone = rawPhone.replace(/\D/g, '');
-    const formattedPhone = phone.length === 10 ? '91' + phone : phone;
-
-    const subTotal = parseFloat(inv.amount) || 0;
-    const customerState = getStateFromCity(inv.city);
-    const isInterState = customerState.trim().toLowerCase() !== 'tamil nadu';
-
-    let cgstRate = 0;
-    let sgstRate = 0;
-    let igstRate = 0;
-
-    const gstRatePercent = inv.gst_rate !== undefined ? parseFloat(inv.gst_rate) : 18;
-
-    if (isInterState) {
-      igstRate = gstRatePercent;
-    } else {
-      cgstRate = gstRatePercent / 2;
-      sgstRate = cgstRate;
-    }
-
-    const cgstAmount = subTotal * (cgstRate / 100);
-    const sgstAmount = subTotal * (sgstRate / 100);
-    const igstAmount = subTotal * (igstRate / 100);
-    const taxTotal = cgstAmount + sgstAmount + igstAmount;
-    const grandTotal = subTotal + taxTotal;
-
-    const advancePaid = parseFloat(inv.advance_paid) || 0;
-    const pendingAmt = inv.status === 'Paid' ? 0 : Math.max(0, grandTotal - advancePaid);
-
-    let taxBreakdown = '';
-    if (isInterState) {
-      taxBreakdown = `• IGST (${igstRate}%): ₹${igstAmount.toFixed(2)}`;
-    } else {
-      taxBreakdown = `• CGST (${cgstRate}%): ₹${cgstAmount.toFixed(2)}\n• SGST (${sgstRate}%): ₹${sgstAmount.toFixed(2)}`;
-    }
-
-    const message = `Hello *${inv.customer_name}*,\n\nYour invoice *${inv.invoice_no}* for *${inv.service_name}* has been generated.\n\n*Invoice Summary:*\n• Invoice No: ${inv.invoice_no}\n• Date: ${formatDateSafe(inv.invoice_date)}\n• Subtotal: ₹${subTotal.toFixed(2)}\n${taxBreakdown}\n• Grand Total: ₹${grandTotal.toFixed(2)}\n• Advance Paid: ₹${advancePaid.toFixed(2)}\n• Pending Amount: ₹${pendingAmt.toFixed(2)}\n• Status: *${inv.status}*\n\nThank you for choosing *Amigo Webster*!`;
-
-    const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+    setAutoShareInvoice(inv);
   };
 
   const handleSaveInvoice = async (e) => {
@@ -1001,6 +963,16 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
               <button type="button" className="btn btn-danger" onClick={handleDeleteConfirm}>Delete</button>
             </div>
           </div>
+        </div>
+      )}
+      {/* Offscreen Auto-Sharing Modal */}
+      {autoShareInvoice && (
+        <div style={{ position: 'absolute', left: '-9999px', top: '-9999px', width: '800px', zIndex: -1000, pointerEvents: 'none' }}>
+          <InvoicePrint 
+            invoice={autoShareInvoice} 
+            onClose={() => setAutoShareInvoice(null)} 
+            autoShare={true} 
+          />
         </div>
       )}
     </div>
