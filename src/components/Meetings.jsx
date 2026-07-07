@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Clock, Plus, Search, User, FileText, AlertCircle } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Plus, Search, User, FileText, AlertCircle, LogIn, LogOut } from 'lucide-react';
 import { API_URL } from '../config';
 
 export default function Meetings({ onNavigate, showToast }) {
@@ -91,6 +91,36 @@ export default function Meetings({ onNavigate, showToast }) {
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setForm(f => ({ ...f, [id]: value }));
+  };
+
+  const handleCheckIn = (meet) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = now.toLocaleDateString('en-GB');
+
+    const rawPhone = meet.mobile_number || '';
+    const phone = rawPhone.replace(/\D/g, '');
+    const formattedPhone = phone.length === 10 ? '91' + phone : phone;
+
+    const message = `*From Madhusphonics*\n\nHello ${meet.customer_name}, you have successfully checked in at ${timeStr} on ${dateStr}  Madhu's Phonics & Handwriting....Thank you for more info www.madhusphonics.in`;
+
+    const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
+  const handleCheckOut = (meet) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = now.toLocaleDateString('en-GB');
+
+    const rawPhone = meet.mobile_number || '';
+    const phone = rawPhone.replace(/\D/g, '');
+    const formattedPhone = phone.length === 10 ? '91' + phone : phone;
+
+    const message = `*From Madhusphonics*\n\nHello ${meet.customer_name}, you have successfully checked out at ${timeStr} on ${dateStr}  Madhu's Phonics & Handwriting....Thank you for more info www.madhusphonics.in`;
+
+    const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
   };
 
   const handleSaveMeeting = async (e) => {
@@ -202,6 +232,7 @@ export default function Meetings({ onNavigate, showToast }) {
                         <th>Mobile</th>
                         <th>Assigned Doctor</th>
                         <th>Symptoms / Diagnosis</th>
+                        <th style={{ textAlign: 'right' }}>Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -218,6 +249,24 @@ export default function Meetings({ onNavigate, showToast }) {
                           <td>{meet.mobile_number}</td>
                           <td>{meet.lead_name}</td>
                           <td style={{ color: 'var(--text-secondary)' }}>{meet.agenda}</td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                              <button 
+                                className="btn btn-whatsapp btn-icon-only" 
+                                onClick={() => handleCheckIn(meet)} 
+                                title="Check In via WhatsApp"
+                              >
+                                <LogIn size={14} />
+                              </button>
+                              <button 
+                                className="btn btn-secondary btn-icon-only" 
+                                onClick={() => handleCheckOut(meet)} 
+                                title="Check Out via WhatsApp"
+                              >
+                                <LogOut size={14} />
+                              </button>
+                            </div>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
