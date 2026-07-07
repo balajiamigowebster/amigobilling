@@ -14,6 +14,76 @@ const formatDateSafe = (dateStr) => {
   return `${day} ${months[monthIndex] || ''} ${year}`;
 };
 
+const getStateFromCity = (city) => {
+  if (!city) return 'Tamil Nadu';
+  const cleanCity = city.trim().toLowerCase();
+  
+  const cityToStateMap = {
+    chennai: 'Tamil Nadu',
+    coimbatore: 'Tamil Nadu',
+    madurai: 'Tamil Nadu',
+    trichy: 'Tamil Nadu',
+    salem: 'Tamil Nadu',
+    tirunelveli: 'Tamil Nadu',
+    vellore: 'Tamil Nadu',
+    erode: 'Tamil Nadu',
+    thanjavur: 'Tamil Nadu',
+    vengambakkam: 'Tamil Nadu',
+    kilkattalai: 'Tamil Nadu',
+    
+    mumbai: 'Maharashtra',
+    pune: 'Maharashtra',
+    nagpur: 'Maharashtra',
+    thane: 'Maharashtra',
+    nashik: 'Maharashtra',
+    
+    bangalore: 'Karnataka',
+    bengaluru: 'Karnataka',
+    mysore: 'Karnataka',
+    hubli: 'Karnataka',
+    mangalore: 'Karnataka',
+    
+    delhi: 'Delhi',
+    'new delhi': 'Delhi',
+    noida: 'Uttar Pradesh',
+    gurugram: 'Haryana',
+    gurgaon: 'Haryana',
+    
+    hyderabad: 'Telangana',
+    secunderabad: 'Telangana',
+    visakhapatnam: 'Andhra Pradesh',
+    
+    kolkata: 'West Bengal',
+    
+    ahmedabad: 'Gujarat',
+    surat: 'Gujarat',
+    vadodara: 'Gujarat',
+    
+    jaipur: 'Rajasthan',
+    lucknow: 'Uttar Pradesh',
+    patna: 'Bihar',
+    bhopal: 'Madhya Pradesh',
+    indore: 'Madhya Pradesh',
+    kochi: 'Kerala',
+    trivandrum: 'Kerala'
+  };
+
+  return cityToStateMap[cleanCity] || 'Tamil Nadu';
+};
+
+const WhatsAppIcon = ({ size = 16 }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 448 512"
+    width={size}
+    height={size}
+    fill="currentColor"
+    style={{ display: 'inline-block', verticalAlign: 'middle' }}
+  >
+    <path d="M380.9 97.1C339 55.1 283.2 32 223.9 32c-122.4 0-222 99.6-222 222 0 39.1 10.2 77.3 29.6 111L3.2 480l117.7-30.9c32.4 17.7 68.9 27 106.1 27h.1c122.3 0 224.1-99.6 224.1-222 0-59.3-25.2-115-67.1-157zm-157 341.6c-33.2 0-65.7-8.9-94-25.7l-6.7-4-69.8 18.3L72 359.2l-4.4-7c-18.5-29.4-28.2-63.3-28.2-98.2 0-101.7 82.8-184.5 184.6-184.5 49.3 0 95.6 19.2 130.4 54.1 34.8 34.9 56.2 81.2 56.1 130.5 0 101.8-84.9 184.6-186.6 184.6zm101.2-138.2c-5.5-2.8-32.8-16.2-37.9-18-5.1-1.9-8.8-2.8-12.5 2.8-3.7 5.6-14.3 18-17.6 21.8-3.2 3.7-6.5 4.2-12 1.4-32.6-16.3-54-29.1-75.5-66-5.7-9.8 5.7-9.1 16.3-30.3 1.8-3.7 .9-6.9-.5-9.7-1.4-2.8-12.5-30.1-17.1-41.2-4.5-10.8-9.1-9.3-12.5-9.5-3.2-.2-6.9-.2-10.6-.2-3.7 0-9.7 1.4-14.8 6.9-5.1 5.6-19.4 19-19.4 46.3 0 27.3 19.9 53.7 22.6 57.4 2.8 3.7 39.1 59.7 94.8 83.8 35.2 15.2 49 16.5 66.6 13.9 10.7-1.6 32.8-13.4 37.4-26.4 4.6-13 4.6-24.1 3.2-26.4-1.3-2.5-5-3.9-10.5-6.6z" />
+  </svg>
+);
+
 export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
   const [invoices, setInvoices] = useState([]);
   const [customers, setCustomers] = useState([]);
@@ -265,6 +335,50 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
     });
   };
 
+  const handleSendWhatsApp = (inv) => {
+    const rawPhone = inv.mobile_number || '';
+    const phone = rawPhone.replace(/\D/g, '');
+    const formattedPhone = phone.length === 10 ? '91' + phone : phone;
+
+    const subTotal = parseFloat(inv.amount) || 0;
+    const customerState = getStateFromCity(inv.city);
+    const isInterState = customerState.trim().toLowerCase() !== 'tamil nadu';
+
+    let cgstRate = 0;
+    let sgstRate = 0;
+    let igstRate = 0;
+
+    const gstRatePercent = inv.gst_rate !== undefined ? parseFloat(inv.gst_rate) : 18;
+
+    if (isInterState) {
+      igstRate = gstRatePercent;
+    } else {
+      cgstRate = gstRatePercent / 2;
+      sgstRate = cgstRate;
+    }
+
+    const cgstAmount = subTotal * (cgstRate / 100);
+    const sgstAmount = subTotal * (sgstRate / 100);
+    const igstAmount = subTotal * (igstRate / 100);
+    const taxTotal = cgstAmount + sgstAmount + igstAmount;
+    const grandTotal = subTotal + taxTotal;
+
+    const advancePaid = parseFloat(inv.advance_paid) || 0;
+    const pendingAmt = inv.status === 'Paid' ? 0 : Math.max(0, grandTotal - advancePaid);
+
+    let taxBreakdown = '';
+    if (isInterState) {
+      taxBreakdown = `• IGST (${igstRate}%): ₹${igstAmount.toFixed(2)}`;
+    } else {
+      taxBreakdown = `• CGST (${cgstRate}%): ₹${cgstAmount.toFixed(2)}\n• SGST (${sgstRate}%): ₹${sgstAmount.toFixed(2)}`;
+    }
+
+    const message = `Hello *${inv.customer_name}*,\n\nYour invoice *${inv.invoice_no}* for *${inv.service_name}* has been generated.\n\n*Invoice Summary:*\n• Invoice No: ${inv.invoice_no}\n• Date: ${formatDateSafe(inv.invoice_date)}\n• Subtotal: ₹${subTotal.toFixed(2)}\n${taxBreakdown}\n• Grand Total: ₹${grandTotal.toFixed(2)}\n• Advance Paid: ₹${advancePaid.toFixed(2)}\n• Pending Amount: ₹${pendingAmt.toFixed(2)}\n• Status: *${inv.status}*\n\nThank you for choosing *Amigo Webster*!`;
+
+    const url = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    window.open(url, '_blank');
+  };
+
   const handleSaveInvoice = async (e) => {
     e.preventDefault();
     if (!form.patientId || items.some(item => !item.title || !item.rate) || !form.invoiceDate) {
@@ -487,6 +601,9 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
                         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                           <button className="btn btn-secondary btn-icon-only" onClick={() => onPrintInvoice(inv)} title="Print Invoice Receipt">
                             <Printer size={14} />
+                          </button>
+                          <button className="btn btn-whatsapp btn-icon-only" onClick={() => handleSendWhatsApp(inv)} title="Send to WhatsApp">
+                            <WhatsAppIcon size={14} />
                           </button>
                           <button className="btn btn-outline btn-icon-only" onClick={() => handleOpenEditModal(inv)} title="Edit Details">
                             <Pencil size={14} />
