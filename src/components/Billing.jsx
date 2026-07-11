@@ -551,6 +551,15 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
     return pages;
   };
 
+  const sumAmount = filteredInvoices.reduce((sum, inv) => sum + (parseFloat(inv.amount) || 0), 0);
+  const sumPaid = filteredInvoices.reduce((sum, inv) => sum + (parseFloat(inv.advance_paid) || 0), 0);
+  const sumPending = filteredInvoices.reduce((sum, inv) => {
+    const amt = parseFloat(inv.amount) || 0;
+    const adv = parseFloat(inv.advance_paid) || 0;
+    const pending = inv.status === 'Paid' ? 0 : Math.max(0, amt - adv);
+    return sum + pending;
+  }, 0);
+
   return (
     <div>
       <div className="card-header-flex" style={{ marginBottom: '24px' }}>
@@ -739,6 +748,17 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
                   );
                 })}
               </tbody>
+              <tfoot>
+                <tr style={{ backgroundColor: 'rgba(0,0,0,0.015)', fontWeight: '700', borderTop: '2.5px solid var(--border-color)' }}>
+                  <td colSpan="4" style={{ textAlign: 'right', padding: '16px', fontWeight: '800', fontSize: '0.9rem' }}>Totals:</td>
+                  <td style={{ padding: '16px', fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-primary)' }}>₹{sumAmount.toFixed(2)}</td>
+                  <td style={{ padding: '16px', fontWeight: '800', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>₹{sumPaid.toFixed(2)}</td>
+                  <td style={{ padding: '16px', fontWeight: '800', fontSize: '0.9rem', color: sumPending > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
+                    {sumPending > 0 ? `₹${sumPending.toFixed(2)}` : '—'}
+                  </td>
+                  <td colSpan="3"></td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         )}
