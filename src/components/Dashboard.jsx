@@ -406,6 +406,51 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
           </div>
         </div>
 
+        {/* Month's Expenses */}
+        <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            backgroundColor: 'var(--danger-light)',
+            color: 'var(--danger)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <TrendingDown size={24} />
+          </div>
+          <div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Month's Expenses</p>
+            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>₹{monthExpenses.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</h3>
+          </div>
+        </div>
+
+        {/* Month's Profit */}
+        <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            backgroundColor: 'var(--success-light)',
+            color: 'var(--success)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <TrendingUp size={24} />
+          </div>
+          <div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Month's Profit</p>
+            <h3 style={{ fontSize: '1.6rem', fontWeight: 700, marginTop: '2px' }}>
+              ₹{monthProfit.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              <span style={{ fontSize: '0.85rem', color: monthProfit >= 0 ? 'var(--success)' : 'var(--danger)', marginLeft: '6px', fontWeight: 600 }}>
+                ({monthProfitPercent.toFixed(1)}%)
+              </span>
+            </h3>
+          </div>
+        </div>
+
         {/* Year's Revenue */}
         <div className="card" style={{ flexDirection: 'row', gap: '16px', alignItems: 'center', padding: '20px' }}>
           <div style={{
