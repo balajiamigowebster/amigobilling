@@ -93,6 +93,7 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('All'); // 'All', 'Paid', 'Unpaid', 'Pending'
   const [filterDate, setFilterDate] = useState('All'); // 'All', 'This Month', 'Last Month', 'This Year'
+  const [paymentsHistory, setPaymentsHistory] = useState([]);
   const itemsPerPage = 10;
   const [loading, setLoading] = useState(true);
   
@@ -222,6 +223,7 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
 
   const handleOpenAddModal = async () => {
     setEditingInvoice(null);
+    setPaymentsHistory([]);
     const defaultItem = services.length > 0
       ? { title: services[0].service_name, description: '', rate: services[0].cost.toString(), qty: 1, amount: services[0].cost }
       : { title: '', description: '', rate: '', qty: 1, amount: 0 };
@@ -278,6 +280,25 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
       ];
     }
 
+    let parsedHistory = [];
+    try {
+      parsedHistory = typeof invoice.payments_history === 'string' ? JSON.parse(invoice.payments_history) : invoice.payments_history;
+      if (!Array.isArray(parsedHistory)) parsedHistory = [];
+    } catch (e) {
+      parsedHistory = [];
+    }
+
+    if (parsedHistory.length === 0 && parseFloat(invoice.advance_paid || 0) > 0) {
+      parsedHistory = [
+        {
+          amount: invoice.advance_paid.toString(),
+          date: invoice.advance_payment_date ? invoice.advance_payment_date.slice(0, 10) : invoice.invoice_date.slice(0, 10)
+        }
+      ];
+    }
+
+    setPaymentsHistory(parsedHistory);
+
     setForm({
       invoiceNo: invoice.invoice_no,
       patientId: matchCust ? matchCust.id : '',
@@ -293,6 +314,43 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
     setItems(parsedItems);
     setFormError('');
     setShowModal(true);
+  };
+
+  const handleAddPayment = () => {
+    const newPayment = {
+      amount: '',
+      date: new Date().toISOString().slice(0, 10)
+    };
+    const updatedHistory = [...paymentsHistory, newPayment];
+    setPaymentsHistory(updatedHistory);
+    syncPayments(updatedHistory);
+  };
+
+  const handlePaymentChange = (index, field, value) => {
+    const updatedHistory = paymentsHistory.map((p, idx) => {
+      if (idx === index) {
+        return { ...p, [field]: value };
+      }
+      return p;
+    });
+    setPaymentsHistory(updatedHistory);
+    syncPayments(updatedHistory);
+  };
+
+  const handleRemovePayment = (index) => {
+    const updatedHistory = paymentsHistory.filter((_, idx) => idx !== index);
+    setPaymentsHistory(updatedHistory);
+    syncPayments(updatedHistory);
+  };
+
+  const syncPayments = (history) => {
+    const totalAdv = history.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
+    const firstDate = history.length > 0 && history[0].date ? history[0].date : '';
+    setForm(f => ({
+      ...f,
+      advancePaid: totalAdv.toString(),
+      advancePaymentDate: firstDate
+    }));
   };
 
   const addRow = () => {
@@ -356,7 +414,8 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
     try {
       const payload = {
         ...form,
-        items
+        items,
+        paymentsHistory
       };
 
       let res;
@@ -603,14 +662,46 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
                       <td style={{ whiteSpace: 'normal', minWidth: '140px' }}>{inv.service_name}</td>
                       <td style={{ fontWeight: 700 }}>₹{parseFloat(inv.amount).toFixed(2)}</td>
                       <td style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>
-                        {parseFloat(inv.advance_paid || 0) > 0 ? (
-                          <div>
-                            <div>₹{parseFloat(inv.advance_paid).toFixed(2)}</div>
-                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
-                              Paid: {formatDateSafe(inv.advance_payment_date)}
+                        {inv.payments_history ? (
+                          (() => {
+                            try {
+                              const history = JSON.parse(inv.payments_history);
+                              if (Array.isArray(history) && history.length > 0) {
+                                return (
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                    <div style={{ fontWeight: '700' }}>₹{parseFloat(inv.advance_paid).toFixed(2)}</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', fontSize: '0.72rem', color: 'var(--text-muted)', gap: '1px', fontWeight: 500 }}>
+                                      {history.map((h, idx) => (
+                                        <div key={idx} style={{ whiteSpace: 'nowrap' }}>
+                                          • ₹{(parseFloat(h.amount) || 0).toFixed(0)} on {formatDateSafe(h.date)}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                            } catch (e) {}
+                            return (
+                              parseFloat(inv.advance_paid || 0) > 0 ? (
+                                <div>
+                                  <div>₹{parseFloat(inv.advance_paid).toFixed(2)}</div>
+                                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
+                                    Paid: {formatDateSafe(inv.advance_payment_date)}
+                                  </div>
+                                </div>
+                              ) : '—'
+                            );
+                          })()
+                        ) : (
+                          parseFloat(inv.advance_paid || 0) > 0 ? (
+                            <div>
+                              <div>₹{parseFloat(inv.advance_paid).toFixed(2)}</div>
+                              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 500, marginTop: '2px' }}>
+                                Paid: {formatDateSafe(inv.advance_payment_date)}
+                              </div>
                             </div>
-                          </div>
-                        ) : '—'}
+                          ) : '—'
+                        )}
                       </td>
                       <td style={{ fontWeight: 600, color: pendingAmt > 0 ? 'var(--danger)' : 'var(--text-secondary)' }}>
                         {pendingAmt > 0 ? `₹${pendingAmt.toFixed(2)}` : '—'}
@@ -874,6 +965,78 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
                   </button>
                 </div>
 
+                {/* Payments History Section */}
+                <div style={{
+                  border: '1px solid var(--border-color)',
+                  borderRadius: 'var(--radius-md)',
+                  padding: '16px',
+                  backgroundColor: 'rgba(0, 0, 0, 0.01)',
+                  marginBottom: '24px'
+                }}>
+                  <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '12px', color: 'var(--text-primary)' }}>
+                    Payments Received (Installments)
+                  </h4>
+                  
+                  {paymentsHistory.length === 0 ? (
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '12px' }}>
+                      No payments received yet. Click "Add Payment" to record a payment installment.
+                    </p>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '12px' }}>
+                      {paymentsHistory.map((p, index) => (
+                        <div key={index} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', minWidth: '95px' }}>
+                            Installment #{index + 1}
+                          </span>
+                          
+                          <div style={{ flex: '1' }}>
+                            <input
+                              type="number"
+                              className="form-input"
+                              placeholder="Amount (INR)"
+                              value={p.amount}
+                              onChange={e => handlePaymentChange(index, 'amount', e.target.value)}
+                              required
+                              min="0"
+                              style={{ padding: '8px 10px', fontSize: '0.85rem' }}
+                            />
+                          </div>
+                          
+                          <div style={{ flex: '1' }}>
+                            <input
+                              type="date"
+                              className="form-input"
+                              value={p.date ? p.date.slice(0, 10) : ''}
+                              onChange={e => handlePaymentChange(index, 'date', e.target.value)}
+                              required
+                              style={{ padding: '8px 10px', fontSize: '0.85rem' }}
+                            />
+                          </div>
+                          
+                          <button
+                            type="button"
+                            className="btn btn-danger btn-icon-only"
+                            onClick={() => handleRemovePayment(index)}
+                            style={{ width: '32px', height: '32px', padding: 0 }}
+                            title="Remove Payment"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={handleAddPayment}
+                    style={{ padding: '6px 12px', fontSize: '0.8rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <Plus size={14} /> Add Payment
+                  </button>
+                </div>
+
                 <div className="form-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}>
                   <div className="form-group">
                     <label className="form-label" htmlFor="amount">Sub Total (INR)</label>
@@ -928,31 +1091,17 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label" htmlFor="advancePaid">Advance Paid (INR)</label>
+                    <label className="form-label" htmlFor="advancePaid">Total Paid (INR)</label>
                     <input
                       id="advancePaid"
                       type="number"
                       className="form-input"
                       value={form.advancePaid}
-                      onChange={handleInputChange}
-                      placeholder="0"
-                      style={{ fontWeight: '600' }}
+                      disabled
+                      readOnly
+                      style={{ fontWeight: '600', backgroundColor: 'var(--bg-primary)' }}
                     />
                   </div>
-
-                  {parseFloat(form.advancePaid || 0) > 0 && (
-                    <div className="form-group">
-                      <label className="form-label" htmlFor="advancePaymentDate">Advance Payment Date *</label>
-                      <input
-                        id="advancePaymentDate"
-                        type="date"
-                        className="form-input"
-                        value={form.advancePaymentDate}
-                        onChange={handleInputChange}
-                        required={parseFloat(form.advancePaid || 0) > 0}
-                      />
-                    </div>
-                  )}
 
                   <div className="form-group">
                     <label className="form-label">Balance Due (INR)</label>

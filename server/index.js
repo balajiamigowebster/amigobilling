@@ -374,7 +374,7 @@ app.get('/api/invoices/next-no', async (req, res) => {
 
 // Save invoice
 app.post('/api/invoices', async (req, res) => {
-  const { invoiceNo, patientId, items, amount, advancePaid, advancePaymentDate, finalPaymentDate, status, invoiceDate, gstRate } = req.body;
+  const { invoiceNo, patientId, items, amount, advancePaid, advancePaymentDate, finalPaymentDate, status, invoiceDate, gstRate, paymentsHistory } = req.body;
 
   if (!patientId || !items || !amount || !invoiceDate) {
     return res.status(400).json({ error: 'Customer, Items, Total Amount, and Date are required.' });
@@ -410,10 +410,17 @@ app.post('/api/invoices', async (req, res) => {
     }
     const itemsStr = JSON.stringify(items);
 
+    let finalAdvancePaid = parseFloat(advancePaid || 0);
+    let finalPaymentsHistoryStr = null;
+    if (Array.isArray(paymentsHistory)) {
+      finalPaymentsHistoryStr = JSON.stringify(paymentsHistory);
+      finalAdvancePaid = paymentsHistory.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    }
+
     const result = await db.query(
-      `INSERT INTO invoices (invoice_no, customer_id_seq, customer_name, service_name, items, amount, advance_paid, advance_payment_date, final_payment_date, status, invoice_date, gst_rate) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [finalInvNo, customer_id_seq, customer_name, serviceName, itemsStr, parseFloat(amount), parseFloat(advancePaid || 0), advancePaymentDate || null, finalPaymentDate || null, status || 'Paid', invoiceDate, parseFloat(gstRate !== undefined ? gstRate : 18.00)]
+      `INSERT INTO invoices (invoice_no, customer_id_seq, customer_name, service_name, items, amount, advance_paid, advance_payment_date, final_payment_date, status, invoice_date, gst_rate, payments_history) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [finalInvNo, customer_id_seq, customer_name, serviceName, itemsStr, parseFloat(amount), finalAdvancePaid, advancePaymentDate || null, finalPaymentDate || null, status || 'Paid', invoiceDate, parseFloat(gstRate !== undefined ? gstRate : 18.00), finalPaymentsHistoryStr]
     );
 
     res.status(201).json({ id: result.insertId, invoiceNo: finalInvNo, message: 'Invoice saved successfully.' });
@@ -426,7 +433,7 @@ app.post('/api/invoices', async (req, res) => {
 // Update invoice
 const updateInvoice = async (req, res) => {
   const { id } = req.params;
-  const { items, amount, advancePaid, advancePaymentDate, finalPaymentDate, status, invoiceDate, gstRate } = req.body;
+  const { items, amount, advancePaid, advancePaymentDate, finalPaymentDate, status, invoiceDate, gstRate, paymentsHistory } = req.body;
 
   try {
     // Determine summary service name
@@ -436,9 +443,16 @@ const updateInvoice = async (req, res) => {
     }
     const itemsStr = JSON.stringify(items);
 
+    let finalAdvancePaid = parseFloat(advancePaid || 0);
+    let finalPaymentsHistoryStr = null;
+    if (Array.isArray(paymentsHistory)) {
+      finalPaymentsHistoryStr = JSON.stringify(paymentsHistory);
+      finalAdvancePaid = paymentsHistory.reduce((sum, p) => sum + parseFloat(p.amount || 0), 0);
+    }
+
     await db.query(
-      'UPDATE invoices SET service_name = ?, items = ?, amount = ?, advance_paid = ?, advance_payment_date = ?, final_payment_date = ?, status = ?, invoice_date = ?, gst_rate = ? WHERE id = ?',
-      [serviceName, itemsStr, parseFloat(amount), parseFloat(advancePaid || 0), advancePaymentDate || null, finalPaymentDate || null, status, invoiceDate, parseFloat(gstRate !== undefined ? gstRate : 18.00), id]
+      'UPDATE invoices SET service_name = ?, items = ?, amount = ?, advance_paid = ?, advance_payment_date = ?, final_payment_date = ?, status = ?, invoice_date = ?, gst_rate = ?, payments_history = ? WHERE id = ?',
+      [serviceName, itemsStr, parseFloat(amount), finalAdvancePaid, advancePaymentDate || null, finalPaymentDate || null, status, invoiceDate, parseFloat(gstRate !== undefined ? gstRate : 18.00), finalPaymentsHistoryStr, id]
     );
     res.json({ message: 'Invoice updated successfully.' });
   } catch (error) {

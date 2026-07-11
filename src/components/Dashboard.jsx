@@ -103,35 +103,58 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const currentMonth = now.getMonth();
 
   // Helper to extract all payment events dynamically:
-  // - Advance payment of amount `advance_paid` is received on `advance_payment_date` (or `invoice_date`)
-  // - Remaining payment of amount `amount - advance_paid` is received on `final_payment_date` (or `invoice_date`) when status is 'Paid'
+  // - If payments_history is present, extract each logged payment date and amount
+  // - Fallback: Advance payment and final payment dates
   const paymentEvents = [];
   invoices.forEach(inv => {
-    const amt = parseFloat(inv.amount) || 0;
-    const adv = parseFloat(inv.advance_paid) || 0;
-    
-    // 1. Advance Payment
-    if (adv > 0) {
-      const advDate = inv.advance_payment_date 
-        ? inv.advance_payment_date.slice(0, 10) 
-        : inv.invoice_date.slice(0, 10);
-      paymentEvents.push({
-        amount: adv,
-        date: advDate
-      });
+    let hasHistory = false;
+    if (inv.payments_history) {
+      try {
+        const history = JSON.parse(inv.payments_history);
+        if (Array.isArray(history) && history.length > 0) {
+          hasHistory = true;
+          history.forEach(p => {
+            const pAmt = parseFloat(p.amount) || 0;
+            if (pAmt > 0) {
+              paymentEvents.push({
+                amount: pAmt,
+                date: p.date ? p.date.slice(0, 10) : inv.invoice_date.slice(0, 10)
+              });
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Error parsing payments_history:", e);
+      }
     }
-    
-    // 2. Final Payment (only if marked Paid)
-    if (inv.status === 'Paid') {
-      const finalAmt = amt - adv;
-      if (finalAmt > 0) {
-        const finalDate = inv.final_payment_date 
-          ? inv.final_payment_date.slice(0, 10) 
+
+    if (!hasHistory) {
+      const amt = parseFloat(inv.amount) || 0;
+      const adv = parseFloat(inv.advance_paid) || 0;
+      
+      // 1. Advance Payment
+      if (adv > 0) {
+        const advDate = inv.advance_payment_date 
+          ? inv.advance_payment_date.slice(0, 10) 
           : inv.invoice_date.slice(0, 10);
         paymentEvents.push({
-          amount: finalAmt,
-          date: finalDate
+          amount: adv,
+          date: advDate
         });
+      }
+      
+      // 2. Final Payment (only if marked Paid)
+      if (inv.status === 'Paid') {
+        const finalAmt = amt - adv;
+        if (finalAmt > 0) {
+          const finalDate = inv.final_payment_date 
+            ? inv.final_payment_date.slice(0, 10) 
+            : inv.invoice_date.slice(0, 10);
+          paymentEvents.push({
+            amount: finalAmt,
+            date: finalDate
+          });
+        }
       }
     }
   });
@@ -323,33 +346,62 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   // Collect payment transactions (including advance payments and final payments)
   const payments = [];
   invoices.forEach(inv => {
-    // If there is an advance payment, record it
-    if (parseFloat(inv.advance_paid) > 0) {
-      payments.push({
-        id: `adv-${inv.id}`,
-        invoiceNo: inv.invoice_no,
-        customerName: inv.customer_name,
-        serviceName: inv.service_name,
-        type: 'Advance Payment',
-        amount: parseFloat(inv.advance_paid),
-        date: inv.advance_payment_date ? inv.advance_payment_date.slice(0, 10) : inv.invoice_date.slice(0, 10),
-        status: 'Received'
-      });
+    let hasHistory = false;
+    if (inv.payments_history) {
+      try {
+        const history = JSON.parse(inv.payments_history);
+        if (Array.isArray(history) && history.length > 0) {
+          hasHistory = true;
+          history.forEach((p, idx) => {
+            const pAmt = parseFloat(p.amount) || 0;
+            if (pAmt > 0) {
+              payments.push({
+                id: `hist-${inv.id}-${idx}`,
+                invoiceNo: inv.invoice_no,
+                customerName: inv.customer_name,
+                serviceName: inv.service_name,
+                type: idx === 0 ? 'Advance Payment' : `Installment #${idx + 1}`,
+                amount: pAmt,
+                date: p.date ? p.date.slice(0, 10) : inv.invoice_date.slice(0, 10),
+                status: 'Received'
+              });
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Error parsing payments_history for log:", e);
+      }
     }
-    // If the invoice is fully paid, record the main payment
-    if (inv.status === 'Paid') {
-      const mainAmount = parseFloat(inv.amount) - (parseFloat(inv.advance_paid) || 0);
-      if (mainAmount > 0) {
+
+    if (!hasHistory) {
+      // If there is an advance payment, record it
+      if (parseFloat(inv.advance_paid) > 0) {
         payments.push({
-          id: `full-${inv.id}`,
+          id: `adv-${inv.id}`,
           invoiceNo: inv.invoice_no,
           customerName: inv.customer_name,
           serviceName: inv.service_name,
-          type: 'Final Payment',
-          amount: mainAmount,
-          date: inv.final_payment_date ? inv.final_payment_date.slice(0, 10) : inv.invoice_date.slice(0, 10),
+          type: 'Advance Payment',
+          amount: parseFloat(inv.advance_paid),
+          date: inv.advance_payment_date ? inv.advance_payment_date.slice(0, 10) : inv.invoice_date.slice(0, 10),
           status: 'Received'
         });
+      }
+      // If the invoice is fully paid, record the main payment
+      if (inv.status === 'Paid') {
+        const mainAmount = parseFloat(inv.amount) - (parseFloat(inv.advance_paid) || 0);
+        if (mainAmount > 0) {
+          payments.push({
+            id: `full-${inv.id}`,
+            invoiceNo: inv.invoice_no,
+            customerName: inv.customer_name,
+            serviceName: inv.service_name,
+            type: 'Final Payment',
+            amount: mainAmount,
+            date: inv.final_payment_date ? inv.final_payment_date.slice(0, 10) : inv.invoice_date.slice(0, 10),
+            status: 'Received'
+          });
+        }
       }
     }
   });

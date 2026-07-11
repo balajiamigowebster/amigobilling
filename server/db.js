@@ -183,6 +183,7 @@ async function createTables() {
       advance_paid DECIMAL(10, 2) DEFAULT 0.00, -- Advance payment made
       advance_payment_date DATE DEFAULT NULL, -- Date advance payment was received
       final_payment_date DATE DEFAULT NULL, -- Date final payment was received / completed
+      payments_history TEXT DEFAULT NULL, -- JSON array of payments history
       gst_rate DECIMAL(5, 2) DEFAULT 18.00, -- GST rate percentage
       status VARCHAR(20) DEFAULT 'Paid',
       invoice_date DATE NOT NULL
@@ -220,6 +221,17 @@ async function createTables() {
     }
   } catch (err) {
     console.error('Error adding final_payment_date column during migration:', err.message);
+  }
+
+  // Ensure payments_history column exists in invoices
+  try {
+    const cols = await pool.query("SHOW COLUMNS FROM invoices LIKE 'payments_history'");
+    if (cols[0].length === 0) {
+      await pool.query('ALTER TABLE invoices ADD COLUMN payments_history TEXT DEFAULT NULL AFTER final_payment_date');
+      console.log('Database migrated: added payments_history column to invoices table.');
+    }
+  } catch (err) {
+    console.error('Error adding payments_history column during migration:', err.message);
   }
 
   // Ensure gst_rate column exists in invoices
