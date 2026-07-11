@@ -91,6 +91,8 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
   const [services, setServices] = useState([]);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [filterStatus, setFilterStatus] = useState('All'); // 'All', 'Paid', 'Unpaid', 'Pending'
+  const [filterDate, setFilterDate] = useState('All'); // 'All', 'This Month', 'Last Month', 'This Year'
   const itemsPerPage = 10;
   const [loading, setLoading] = useState(true);
   
@@ -429,12 +431,43 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
     const name = inv.customer_name || '';
     const service = inv.service_name || '';
     const status = inv.status || '';
-    return (
+    
+    const matchesSearch = (
       invNo.toLowerCase().includes(query) ||
       name.toLowerCase().includes(query) ||
       service.toLowerCase().includes(query) ||
       status.toLowerCase().includes(query)
     );
+
+    // Status filter
+    let matchesStatus = true;
+    if (filterStatus !== 'All') {
+      matchesStatus = status.toLowerCase() === filterStatus.toLowerCase();
+    }
+
+    // Date filter
+    let matchesDate = true;
+    if (filterDate !== 'All' && inv.invoice_date) {
+      const invDate = new Date(inv.invoice_date);
+      const today = new Date();
+      if (filterDate === 'This Month') {
+        matchesDate = (
+          invDate.getMonth() === today.getMonth() &&
+          invDate.getFullYear() === today.getFullYear()
+        );
+      } else if (filterDate === 'Last Month') {
+        const lastMonth = new Date();
+        lastMonth.setMonth(today.getMonth() - 1);
+        matchesDate = (
+          invDate.getMonth() === lastMonth.getMonth() &&
+          invDate.getFullYear() === lastMonth.getFullYear()
+        );
+      } else if (filterDate === 'This Year') {
+        matchesDate = invDate.getFullYear() === today.getFullYear();
+      }
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   const totalItems = filteredInvoices.length;
@@ -477,9 +510,9 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
       </div>
 
       <div className="card" style={{ padding: '0 0 24px 0', gap: '16px' }}>
-        {/* Search */}
-        <div style={{ padding: '24px 24px 0 24px', display: 'flex', gap: '16px' }}>
-          <div style={{ position: 'relative', flexGrow: 1 }}>
+        {/* Search & Filters */}
+        <div style={{ padding: '24px 24px 0 24px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+          <div style={{ position: 'relative', flex: '1 1 300px' }}>
             <Search size={18} style={{
               position: 'absolute',
               left: '12px',
@@ -498,6 +531,42 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
                 setCurrentPage(1);
               }}
             />
+          </div>
+          
+          {/* Status Filter */}
+          <div style={{ flex: '0 1 180px', minWidth: '140px' }}>
+            <select
+              className="form-select"
+              value={filterStatus}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <option value="All">All Statuses</option>
+              <option value="Paid">Paid</option>
+              <option value="Unpaid">Unpaid</option>
+              <option value="Pending">Pending</option>
+            </select>
+          </div>
+
+          {/* Date Filter */}
+          <div style={{ flex: '0 1 180px', minWidth: '140px' }}>
+            <select
+              className="form-select"
+              value={filterDate}
+              onChange={(e) => {
+                setFilterDate(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{ cursor: 'pointer' }}
+            >
+              <option value="All">All Dates</option>
+              <option value="This Month">This Month</option>
+              <option value="Last Month">Last Month</option>
+              <option value="This Year">This Year</option>
+            </select>
           </div>
         </div>
 
