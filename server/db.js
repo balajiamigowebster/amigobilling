@@ -374,6 +374,20 @@ async function createTables() {
       console.error('Error seeding project assignments:', err.message);
     }
   }
+
+  // Ensure recurring payment columns exist in customers table
+  try {
+    const cols = await pool.query("SHOW COLUMNS FROM customers LIKE 'is_recurring'");
+    if (cols[0].length === 0) {
+      await pool.query('ALTER TABLE customers ADD COLUMN is_recurring TINYINT DEFAULT 0');
+      await pool.query('ALTER TABLE customers ADD COLUMN recurring_day INT DEFAULT NULL');
+      await pool.query('ALTER TABLE customers ADD COLUMN recurring_amount DECIMAL(10, 2) DEFAULT NULL');
+      await pool.query('ALTER TABLE customers ADD COLUMN recurring_service VARCHAR(100) DEFAULT NULL');
+      console.log('Database migrated: added recurring billing columns to customers table.');
+    }
+  } catch (err) {
+    console.error('Error adding recurring billing columns to customers table:', err.message);
+  }
 }
 
 // Wrapper for query execution

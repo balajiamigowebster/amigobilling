@@ -409,12 +409,125 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   // Sort payments by date descending
   payments.sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  // Calculate monthly recurring payment due notifications
+  const dueRetainers = customers
+    .filter(cust => cust.is_recurring === 1)
+    .map(cust => {
+      // Find if paid invoice exists for current month/year
+      const hasPaidThisMonth = invoices.some(inv => {
+        const isMatch = inv.customer_id_seq === cust.customer_id_seq;
+        const { year, month } = parseLocalDate(inv.invoice_date);
+        return isMatch && year === currentYear && month === currentMonth && inv.status === 'Paid';
+      });
+
+      if (hasPaidThisMonth) return null; // already paid!
+
+      const dueDay = parseInt(cust.recurring_day, 10) || 1;
+      const todayDay = now.getDate();
+
+      let status = 'upcoming';
+      let diff = dueDay - todayDay;
+      let message = `Due on ${dueDay}th of this month`;
+
+      if (diff < 0) {
+        status = 'overdue';
+        message = `Overdue by ${Math.abs(diff)} days (Due on ${dueDay}th)`;
+      } else if (diff === 0) {
+        status = 'due-today';
+        message = `Due today! (${dueDay}th)`;
+      } else {
+        message = `Due in ${diff} days (${dueDay}th)`;
+      }
+
+      return {
+        customer: cust,
+        dueDay,
+        status,
+        message,
+        amount: parseFloat(cust.recurring_amount) || 0,
+        service: cust.recurring_service || 'SEO'
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => {
+      // Sort overdue first, then due today, then upcoming
+      const order = { 'overdue': 0, 'due-today': 1, 'upcoming': 2 };
+      if (order[a.status] !== order[b.status]) {
+        return order[a.status] - order[b.status];
+      }
+      return a.dueDay - b.dueDay;
+    });
+
   return (
     <div>
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>Welcome Back, Balaji Nagarajan</h1>
         <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Here is the summary of your digital agency operations today.</p>
       </div>
+
+      {/* Recurring Payments Notifications Banner */}
+      {dueRetainers.length > 0 && (
+        <div className="card" style={{
+          padding: '20px',
+          marginBottom: '32px',
+          borderLeft: '5px solid var(--warning)',
+          backgroundColor: 'hsl(35, 100%, 98%)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'hsl(35, 100%, 35%)', fontWeight: 700, fontSize: '1.05rem' }}>
+            <AlertCircle size={20} />
+            <span>Retainer Payment Action Items ({dueRetainers.length})</span>
+          </div>
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
+            The following client retainers are due or overdue for payment in {now.toLocaleString('en-US', { month: 'long' })}:
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+            {dueRetainers.map((item, idx) => {
+              const badgeColor = item.status === 'overdue' ? 'var(--danger-light)' : item.status === 'due-today' ? 'var(--warning-light)' : 'var(--primary-light)';
+              const textColor = item.status === 'overdue' ? 'var(--danger)' : item.status === 'due-today' ? 'var(--warning)' : 'var(--primary)';
+              const badgeText = item.status === 'overdue' ? 'Overdue' : item.status === 'due-today' ? 'Due Today' : 'Upcoming';
+              
+              return (
+                <div key={idx} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '12px 16px',
+                  backgroundColor: 'var(--bg-card)',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  flexWrap: 'wrap',
+                  gap: '12px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span className="badge" style={{ backgroundColor: badgeColor, color: textColor, fontWeight: 700, padding: '4px 10px', fontSize: '0.78rem', borderRadius: '4px' }}>
+                      {badgeText}
+                    </span>
+                    <div>
+                      <strong style={{ fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+                        {item.customer.customer_name}
+                      </strong>
+                      <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginLeft: '8px' }}>
+                        ({item.service})
+                      </span>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+                      {item.message}
+                    </span>
+                    <strong style={{ fontSize: '1rem', color: 'var(--text-primary)' }}>
+                      ₹{item.amount.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </strong>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Summary Cards */}
       <div className="stats-grid">

@@ -22,7 +22,11 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
     city: '',
     address: '',
     assignedLead: '',
-    projectBrief: ''
+    projectBrief: '',
+    isRecurring: false,
+    recurringDay: '',
+    recurringAmount: '',
+    recurringService: ''
   });
   
   const [formError, setFormError] = useState('');
@@ -108,7 +112,11 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
       city: '',
       address: '',
       assignedLead: leads.length > 0 ? leads[0].lead_name : 'Balaji Nagarajan',
-      projectBrief: ''
+      projectBrief: '',
+      isRecurring: false,
+      recurringDay: '',
+      recurringAmount: '',
+      recurringService: ''
     });
     setFormError('');
     setShowAddModal(true);
@@ -134,7 +142,11 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
       city: customer.city || '',
       address: customer.address || '',
       assignedLead: customer.assigned_lead || 'Balaji Nagarajan',
-      projectBrief: customer.project_brief || ''
+      projectBrief: customer.project_brief || '',
+      isRecurring: customer.is_recurring === 1,
+      recurringDay: customer.recurring_day || '',
+      recurringAmount: customer.recurring_amount || '',
+      recurringService: customer.recurring_service || ''
     });
     setFormError('');
     setShowAddModal(true);
@@ -151,6 +163,11 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
   const handleInputChange = (e) => {
     const { id, value } = e.target;
     setForm(f => ({ ...f, [id]: value }));
+  };
+
+  const handleCheckboxChange = (e) => {
+    const { id, checked } = e.target;
+    setForm(f => ({ ...f, [id]: checked }));
   };
 
   const handleSaveCustomer = async (e) => {
@@ -317,6 +334,7 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
                   <th>Email</th>
                   <th>City</th>
                   <th>Project Lead</th>
+                  <th>Retainer</th>
                   <th>Project Brief</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
@@ -330,6 +348,16 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
                     <td style={{ whiteSpace: 'normal', wordBreak: 'break-all', minWidth: '150px' }}>{customer.email || '—'}</td>
                     <td>{customer.city || '—'}</td>
                     <td style={{ fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'normal', minWidth: '110px' }}>{customer.assigned_lead}</td>
+                    <td>
+                      {customer.is_recurring === 1 ? (
+                        <span className="badge badge-success" style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'flex-start', padding: '6px 8px', borderRadius: '6px', gap: '2px', lineHeight: 1.1 }}>
+                          <span style={{ fontWeight: 700 }}>₹{parseFloat(customer.recurring_amount).toLocaleString('en-IN')}/mo</span>
+                          <span style={{ fontSize: '0.7rem', opacity: 0.85 }}>Due: {customer.recurring_day}th</span>
+                        </span>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
                     <td style={{
                       color: 'var(--text-secondary)',
                       maxWidth: '150px',
@@ -540,6 +568,69 @@ export default function CustomerList({ onNavigate, openRegisterModal, onCloseReg
                     value={form.projectBrief}
                     onChange={handleInputChange}
                   />
+                </div>
+
+                <div style={{
+                  borderTop: '1px solid var(--border-color)',
+                  paddingTop: '16px',
+                  marginTop: '16px',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                    <input
+                      type="checkbox"
+                      id="isRecurring"
+                      checked={form.isRecurring}
+                      onChange={handleCheckboxChange}
+                      style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                    />
+                    <label htmlFor="isRecurring" style={{ fontWeight: 600, cursor: 'pointer', fontSize: '0.92rem' }}>
+                      Enable Monthly Recurring Payment Retainer
+                    </label>
+                  </div>
+
+                  {form.isRecurring && (
+                    <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="recurringDay">Due Day (1-31)</label>
+                        <input
+                          id="recurringDay"
+                          type="number"
+                          min="1"
+                          max="31"
+                          className="form-input"
+                          placeholder="e.g. 13"
+                          value={form.recurringDay}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="recurringAmount">Monthly Amount (₹)</label>
+                        <input
+                          id="recurringAmount"
+                          type="number"
+                          className="form-input"
+                          placeholder="e.g. 15000"
+                          value={form.recurringAmount}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label" htmlFor="recurringService">Retainer Service</label>
+                        <input
+                          id="recurringService"
+                          type="text"
+                          className="form-input"
+                          placeholder="e.g. SEO Retainer"
+                          value={form.recurringService}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

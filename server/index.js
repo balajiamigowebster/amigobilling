@@ -93,7 +93,11 @@ app.post('/api/customers', async (req, res) => {
     city,
     address,
     assignedLead,
-    projectBrief
+    projectBrief,
+    isRecurring,
+    recurringDay,
+    recurringAmount,
+    recurringService
   } = req.body;
 
   if (!customerName || !mobileNumber) {
@@ -119,9 +123,23 @@ app.post('/api/customers', async (req, res) => {
 
     const result = await db.query(
       `INSERT INTO customers 
-      (customer_id_seq, customer_name, mobile_number, email, pincode, city, address, assigned_lead, project_brief) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [seqId, customerName, mobileNumber, email || null, pincode || null, city || null, address || null, assignedLead || 'Balaji Nagarajan', projectBrief || null]
+      (customer_id_seq, customer_name, mobile_number, email, pincode, city, address, assigned_lead, project_brief, is_recurring, recurring_day, recurring_amount, recurring_service) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        seqId,
+        customerName,
+        mobileNumber,
+        email || null,
+        pincode || null,
+        city || null,
+        address || null,
+        assignedLead || 'Balaji Nagarajan',
+        projectBrief || null,
+        isRecurring ? 1 : 0,
+        recurringDay !== undefined && recurringDay !== '' ? parseInt(recurringDay, 10) : null,
+        recurringAmount !== undefined && recurringAmount !== '' ? parseFloat(recurringAmount) : null,
+        recurringService || null
+      ]
     );
 
     res.status(201).json({ id: result.insertId, customerIdSeq: seqId, message: 'Customer registered successfully.' });
@@ -142,7 +160,11 @@ const updateCustomer = async (req, res) => {
     city,
     address,
     assignedLead,
-    projectBrief
+    projectBrief,
+    isRecurring,
+    recurringDay,
+    recurringAmount,
+    recurringService
   } = req.body;
 
   if (!customerName || !mobileNumber) {
@@ -159,9 +181,27 @@ const updateCustomer = async (req, res) => {
         city = ?, 
         address = ?, 
         assigned_lead = ?, 
-        project_brief = ? 
+        project_brief = ?,
+        is_recurring = ?,
+        recurring_day = ?,
+        recurring_amount = ?,
+        recurring_service = ?
       WHERE id = ?`,
-      [customerName, mobileNumber, email || null, pincode || null, city || null, address || null, assignedLead || 'Balaji Nagarajan', projectBrief || null, id]
+      [
+        customerName,
+        mobileNumber,
+        email || null,
+        pincode || null,
+        city || null,
+        address || null,
+        assignedLead || 'Balaji Nagarajan',
+        projectBrief || null,
+        isRecurring ? 1 : 0,
+        recurringDay !== undefined && recurringDay !== '' ? parseInt(recurringDay, 10) : null,
+        recurringAmount !== undefined && recurringAmount !== '' ? parseFloat(recurringAmount) : null,
+        recurringService || null,
+        id
+      ]
     );
     res.json({ message: 'Customer updated successfully.' });
   } catch (error) {
