@@ -373,11 +373,103 @@ app.delete('/api/services/:id', deleteService);
 app.post('/api/services/:id/delete', deleteService);
 
 
+// Helper to auto-generate invoices for recurring monthly customers on/after their due day
+const checkAndCreateRecurringInvoices = async () => {
+  try {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-indexed (e.g. 7 for July)
+    const todayDay = now.getDate();
+
+    // 1. Fetch recurring customers
+    const recurringCustomers = await db.query('SELECT * FROM customers WHERE is_recurring = 1');
+    if (recurringCustomers.length === 0) return;
+
+    // 2. Fetch all invoices
+    const invoices = await db.query('SELECT * FROM invoices');
+
+    for (const cust of recurringCustomers) {
+      const dueDay = parseInt(cust.recurring_day, 10);
+      if (isNaN(dueDay)) continue;
+
+      // Only create if we have reached or passed the due day of the current month
+      if (todayDay < dueDay) continue;
+
+      // Check if an invoice already exists for this customer in the current month/year
+      const monthStr = String(currentMonth).padStart(2, '0');
+      const prefix = `${currentYear}-${monthStr}`; // "2026-07"
+
+      const hasInvoice = invoices.some(inv => {
+        const isMatch = inv.customer_id_seq === cust.customer_id_seq;
+        const invDate = inv.invoice_date; // YYYY-MM-DD
+        return isMatch && invDate && invDate.startsWith(prefix);
+      });
+
+      if (!hasInvoice) {
+        // Create a new invoice
+        // First, get the next invoice number
+        const allInvs = await db.query('SELECT invoice_no FROM invoices');
+        let nextNum = 1001;
+        if (allInvs.length > 0) {
+          const nums = allInvs.map(i => {
+            const parts = i.invoice_no.split('-');
+            return parts.length === 2 ? parseInt(parts[1], 10) : null;
+          }).filter(n => n !== null && !isNaN(n));
+          if (nums.length > 0) {
+            nextNum = Math.max(...nums) + 1;
+          }
+        }
+        const invoiceNo = `INV-${nextNum}`;
+
+        // Prepare line items description
+        const serviceName = cust.recurring_service || 'SEO Retainer';
+        const amount = parseFloat(cust.recurring_amount) || 0;
+        const items = JSON.stringify([
+          {
+            title: serviceName,
+            description: `Monthly recurring retainer payment for ${now.toLocaleString('en-US', { month: 'long' })} ${currentYear}`,
+            rate: amount,
+            qty: 1,
+            amount: amount
+          }
+        ]);
+
+        // Invoice date is the due date
+        const invoiceDate = `${currentYear}-${monthStr}-${String(dueDay).padStart(2, '0')}`;
+
+        console.log(`Auto-generating recurring invoice ${invoiceNo} for ${cust.customer_name} due on ${invoiceDate}`);
+
+        await db.query(
+          `INSERT INTO invoices 
+          (invoice_no, customer_id_seq, customer_name, service_name, items, amount, advance_paid, status, invoice_date) 
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            invoiceNo,
+            cust.customer_id_seq,
+            cust.customer_name,
+            serviceName,
+            items,
+            amount,
+            0.00,
+            'Unpaid', // Start as Unpaid so they can record once payment is got
+            invoiceDate
+          ]
+        );
+      }
+    }
+  } catch (err) {
+    console.error("Error auto-generating recurring invoices:", err);
+  }
+};
+
 // ================= INVOICE ROUTES =================
 
 // Get all invoices
 app.get('/api/invoices', async (req, res) => {
   try {
+    // Check and auto-create missing invoices before returning list
+    await checkAndCreateRecurringInvoices();
+
     const invoices = await db.query(`
       SELECT i.*, c.mobile_number, c.email, c.city, c.pincode, c.address, c.assigned_lead, c.project_brief 
       FROM invoices i
