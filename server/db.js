@@ -393,58 +393,71 @@ async function createTables() {
 
   // Seed websites
   const [webCount] = await pool.query('SELECT COUNT(*) as count FROM websites');
-  if (webCount[0].count === 0) {
+  if (webCount[0].count < 24) {
     try {
+      // Temporary workaround for foreign keys during truncation
+      await pool.query('SET FOREIGN_KEY_CHECKS = 0');
+      await pool.query('TRUNCATE TABLE websites');
+      await pool.query('SET FOREIGN_KEY_CHECKS = 1');
+
       const [custs] = await pool.query('SELECT id FROM customers LIMIT 3');
-      if (custs.length > 0) {
-        const cust1 = custs[0].id;
-        const cust2 = custs[1] ? custs[1].id : custs[0].id;
-        const cust3 = custs[2] ? custs[2].id : custs[0].id;
+      const cust1 = custs[0] ? custs[0].id : null;
+      const cust2 = custs[1] ? custs[1].id : cust1;
+      const cust3 = custs[2] ? custs[2].id : cust1;
 
-        const today = new Date();
+      const today = new Date();
+
+      // Helper function to offset date from today
+      const offsetDate = (days) => {
+        const d = new Date(today);
+        d.setDate(today.getDate() + days);
+        return d.toISOString().slice(0, 10);
+      };
+
+      const rawWebsites = [
+        { name: 'SigmaTechX', url: 'https://sigmatechx.com/', daysOffset: 5, cust: cust1 },
+        { name: 'Sri Bhavani Packers and Movers', url: 'https://sribhavanipackersandmovers.com/', daysOffset: 10, cust: cust2 },
+        { name: 'Idli Shop', url: 'https://idlish.shop/', daysOffset: 15, cust: cust3 },
+        { name: 'Next Show', url: 'https://nextshow.in/', daysOffset: 20, cust: null },
         
-        // Website 1: Expiring in 10 days (upcoming renewal)
-        const d1_launch = new Date(today);
-        d1_launch.setFullYear(today.getFullYear() - 1);
-        d1_launch.setDate(today.getDate() + 10);
-        const d1_expiry = new Date(d1_launch);
-        d1_expiry.setFullYear(d1_launch.getFullYear() + 1);
+        { name: 'SR Tours & Travels', url: 'https://srtours.net/', daysOffset: -5, cust: cust1 },
+        { name: 'AVS Legal Associates', url: 'https://www.avslegalassociates.com/', daysOffset: -10, cust: cust2 },
+        { name: 'Chettinad Hotels', url: 'https://chettinad.co.in/', daysOffset: -15, cust: cust3 },
+        { name: 'Foster and Reel', url: 'https://fosterandreel.com/', daysOffset: -20, cust: null },
+        
+        { name: 'Madhus Phonics Com', url: 'https://madhusphonics.com/', daysOffset: 120, cust: cust1 },
+        { name: 'Madhus Phonics In', url: 'https://madhusphonics.in/', daysOffset: 150, cust: cust2 },
+        { name: 'Connect You', url: 'https://connectyou.co.in/', daysOffset: 180, cust: cust3 },
+        { name: 'Connect You Realty', url: 'https://connectyourealty.in/', daysOffset: 210, cust: null },
+        { name: 'Forest Stay', url: 'https://foreststay.in/', daysOffset: 240, cust: cust1 },
+        { name: 'Kuber Globals', url: 'https://kuberglobals.com/', daysOffset: 270, cust: cust2 },
+        { name: 'Bites and Grill', url: 'https://bitesngrill.com/', daysOffset: 300, cust: cust3 },
+        { name: 'MPUS Banquet Hall', url: 'https://mpusbanquethall.com/', daysOffset: 110, cust: null },
+        { name: 'Raai 2K', url: 'https://raai2k.com/', daysOffset: 130, cust: cust1 },
+        { name: 'PS Travels', url: 'https://pstravels.net/', daysOffset: 160, cust: cust2 },
+        { name: 'V5 Logistics', url: 'https://v5logistics.in/', daysOffset: 190, cust: cust3 },
+        { name: 'The Next Edition', url: 'https://thenextedition.co.in/', daysOffset: 220, cust: null },
+        { name: 'Kavitha Travels Com', url: 'https://kavithatravels.com/', daysOffset: 250, cust: cust1 },
+        { name: 'Kavitha Travels In', url: 'https://kavithatravels.in/', daysOffset: 280, cust: cust2 },
+        { name: 'Hemkam Infra', url: 'https://hemkaminfra.com/', daysOffset: 310, cust: cust3 },
+        { name: 'OPM Properties', url: 'https://opmproperties.in/', daysOffset: 340, cust: null }
+      ];
 
-        // Website 2: Expired 5 days ago (already expired)
-        const d2_launch = new Date(today);
-        d2_launch.setFullYear(today.getFullYear() - 1);
-        d2_launch.setDate(today.getDate() - 5);
-        const d2_expiry = new Date(d2_launch);
-        d2_expiry.setFullYear(d2_launch.getFullYear() + 1);
-
-        // Website 3: Active, expires in 6 months
-        const d3_launch = new Date(today);
-        d3_launch.setMonth(today.getMonth() - 6);
-        const d3_expiry = new Date(d3_launch);
-        d3_expiry.setFullYear(d3_launch.getFullYear() + 1);
-
-        // Website 4: Active, sigmatechx.com (without customer association)
-        const d4_launch = new Date(today);
-        d4_launch.setMonth(today.getMonth() - 2);
-        const d4_expiry = new Date(d4_launch);
-        d4_expiry.setFullYear(d4_launch.getFullYear() + 1);
+      for (const w of rawWebsites) {
+        const expDate = offsetDate(w.daysOffset);
+        const expD = new Date(expDate);
+        const launchD = new Date(expD);
+        launchD.setFullYear(expD.getFullYear() - 1);
+        const launchDate = launchD.toISOString().slice(0, 10);
 
         await pool.query(`
-          INSERT INTO websites (customer_id, website_name, website_url, status, launch_date, expiry_date, notes) VALUES 
-          (?, 'Dharma Productions', 'https://sigmatechx.com/', 'Active', ?, ?, 'Domain & Hosting package yearly renewal.'),
-          (?, 'Sri Bhavani Packers', 'https://sribhavanipackersandmovers.com/', 'Active', ?, ?, 'Customer packing & moving project portal.'),
-          (?, 'Idli Shop Portal', 'https://idlish.shop/', 'Active', ?, ?, 'E-commerce menu shop site.'),
-          (NULL, 'Next Show App', 'https://nextshow.in/', 'Active', ?, ?, 'Independent domain setup.')
-        `, [
-          cust1, d1_launch.toISOString().slice(0, 10), d1_expiry.toISOString().slice(0, 10),
-          cust2, d2_launch.toISOString().slice(0, 10), d2_expiry.toISOString().slice(0, 10),
-          cust3, d3_launch.toISOString().slice(0, 10), d3_expiry.toISOString().slice(0, 10),
-          d4_launch.toISOString().slice(0, 10), d4_expiry.toISOString().slice(0, 10)
-        ]);
-        console.log('Seeded initial websites data.');
+          INSERT INTO websites (customer_id, website_name, website_url, status, launch_date, expiry_date, notes)
+          VALUES (?, ?, ?, 'Active', ?, ?, 'Google sheet imported property.')
+        `, [w.cust, w.name, w.url, launchDate, expDate]);
       }
+      console.log('Seeded complete list of 24 websites from Google Sheets.');
     } catch (err) {
-      console.error('Error seeding websites:', err.message);
+      console.error('Error seeding website directory:', err.message);
     }
   }
 
