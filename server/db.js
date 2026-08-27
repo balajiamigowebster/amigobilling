@@ -375,6 +375,79 @@ async function createTables() {
     }
   }
 
+  // 9. Websites table
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS websites (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customer_id INT DEFAULT NULL,
+      website_name VARCHAR(100) NOT NULL,
+      website_url VARCHAR(255) NOT NULL,
+      status VARCHAR(20) DEFAULT 'Active',
+      launch_date DATE DEFAULT NULL,
+      expiry_date DATE DEFAULT NULL,
+      notes TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  `);
+
+  // Seed websites
+  const [webCount] = await pool.query('SELECT COUNT(*) as count FROM websites');
+  if (webCount[0].count === 0) {
+    try {
+      const [custs] = await pool.query('SELECT id FROM customers LIMIT 3');
+      if (custs.length > 0) {
+        const cust1 = custs[0].id;
+        const cust2 = custs[1] ? custs[1].id : custs[0].id;
+        const cust3 = custs[2] ? custs[2].id : custs[0].id;
+
+        const today = new Date();
+        
+        // Website 1: Expiring in 10 days (upcoming renewal)
+        const d1_launch = new Date(today);
+        d1_launch.setFullYear(today.getFullYear() - 1);
+        d1_launch.setDate(today.getDate() + 10);
+        const d1_expiry = new Date(d1_launch);
+        d1_expiry.setFullYear(d1_launch.getFullYear() + 1);
+
+        // Website 2: Expired 5 days ago (already expired)
+        const d2_launch = new Date(today);
+        d2_launch.setFullYear(today.getFullYear() - 1);
+        d2_launch.setDate(today.getDate() - 5);
+        const d2_expiry = new Date(d2_launch);
+        d2_expiry.setFullYear(d2_launch.getFullYear() + 1);
+
+        // Website 3: Active, expires in 6 months
+        const d3_launch = new Date(today);
+        d3_launch.setMonth(today.getMonth() - 6);
+        const d3_expiry = new Date(d3_launch);
+        d3_expiry.setFullYear(d3_launch.getFullYear() + 1);
+
+        // Website 4: Active, sigmatechx.com (without customer association)
+        const d4_launch = new Date(today);
+        d4_launch.setMonth(today.getMonth() - 2);
+        const d4_expiry = new Date(d4_launch);
+        d4_expiry.setFullYear(d4_launch.getFullYear() + 1);
+
+        await pool.query(`
+          INSERT INTO websites (customer_id, website_name, website_url, status, launch_date, expiry_date, notes) VALUES 
+          (?, 'Dharma Productions', 'https://sigmatechx.com/', 'Active', ?, ?, 'Domain & Hosting package yearly renewal.'),
+          (?, 'Sri Bhavani Packers', 'https://sribhavanipackersandmovers.com/', 'Active', ?, ?, 'Customer packing & moving project portal.'),
+          (?, 'Idli Shop Portal', 'https://idlish.shop/', 'Active', ?, ?, 'E-commerce menu shop site.'),
+          (NULL, 'Next Show App', 'https://nextshow.in/', 'Active', ?, ?, 'Independent domain setup.')
+        `, [
+          cust1, d1_launch.toISOString().slice(0, 10), d1_expiry.toISOString().slice(0, 10),
+          cust2, d2_launch.toISOString().slice(0, 10), d2_expiry.toISOString().slice(0, 10),
+          cust3, d3_launch.toISOString().slice(0, 10), d3_expiry.toISOString().slice(0, 10),
+          d4_launch.toISOString().slice(0, 10), d4_expiry.toISOString().slice(0, 10)
+        ]);
+        console.log('Seeded initial websites data.');
+      }
+    } catch (err) {
+      console.error('Error seeding websites:', err.message);
+    }
+  }
+
   // Ensure recurring payment columns exist in customers table
   try {
     const cols = await pool.query("SHOW COLUMNS FROM customers LIKE 'is_recurring'");

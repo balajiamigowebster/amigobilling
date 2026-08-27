@@ -20,6 +20,7 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
   const [services, setServices] = useState([]);
   const [meetings, setMeetings] = useState([]);
   const [expenses, setExpenses] = useState([]);
+  const [websites, setWebsites] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hoveredIndexBar, setHoveredIndexBar] = useState(null);
   const [hoveredIndexLine, setHoveredIndexLine] = useState(null);
@@ -62,6 +63,13 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
         const expData = await expRes.json();
         if (expRes.ok && Array.isArray(expData)) {
           setExpenses(expData);
+        }
+
+        // 6. Fetch Websites
+        const webRes = await fetch(`${API_URL}/api/websites`);
+        const webData = await webRes.json();
+        if (webRes.ok && Array.isArray(webData)) {
+          setWebsites(webData);
         }
 
       } catch (err) {
@@ -458,12 +466,130 @@ export default function Dashboard({ onNavigate, onPrintInvoice, showToast }) {
       return a.dueDay - b.dueDay;
     });
 
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const next30Days = new Date();
+  next30Days.setDate(next30Days.getDate() + 30);
+  const next30DaysStr = next30Days.toISOString().slice(0, 10);
+
+  const expiredWebsites = websites.filter(w => 
+    w.status === 'Active' && 
+    w.expiry_date && 
+    w.expiry_date.slice(0, 10) < todayStr
+  );
+
+  const expiringSoonWebsites = websites.filter(w => 
+    w.status === 'Active' && 
+    w.expiry_date && 
+    w.expiry_date.slice(0, 10) >= todayStr && 
+    w.expiry_date.slice(0, 10) <= next30DaysStr
+  );
+
   return (
     <div>
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>Welcome Back, Balaji Nagarajan</h1>
         <p style={{ color: 'var(--text-secondary)', marginTop: '4px' }}>Here is the summary of your digital agency operations today.</p>
       </div>
+
+      {/* Website Expiry & Hosting Renewal Alerts */}
+      {(expiredWebsites.length > 0 || expiringSoonWebsites.length > 0) && (
+        <div className="card" style={{
+          padding: '20px',
+          marginBottom: '32px',
+          borderLeft: '5px solid var(--danger)',
+          backgroundColor: 'hsl(0, 100%, 99%)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger)', fontWeight: 700, fontSize: '1.05rem' }}>
+            <AlertCircle size={20} />
+            <span>Website Domain & Hosting Renewal Alerts ({expiredWebsites.length + expiringSoonWebsites.length})</span>
+          </div>
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', margin: 0 }}>
+            Action required: The following client websites have completed their subscription cycle or are nearing renewal:
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '4px' }}>
+            {/* Expired List */}
+            {expiredWebsites.map((item, idx) => (
+              <div key={`exp-${idx}`} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                backgroundColor: 'var(--bg-card)',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span className="badge badge-danger" style={{ fontWeight: 700, padding: '4px 10px', fontSize: '0.78rem', borderRadius: '4px' }}>
+                    EXPIRED
+                  </span>
+                  <div>
+                    <strong style={{ fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+                      {item.website_name}
+                    </strong>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginLeft: '8px' }}>
+                      ({item.website_url.replace(/(^\w+:|^)\/\//, '')})
+                    </span>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Client: {item.customer_name || 'Independent Setup'} | Expired On: {formatDateSafe(item.expiry_date)}
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  className="btn btn-outline" 
+                  style={{ fontSize: '0.78rem', padding: '4px 12px' }}
+                  onClick={() => onNavigate('websites')}
+                >
+                  Manage Subscription
+                </button>
+              </div>
+            ))}
+
+            {/* Expiring Soon List */}
+            {expiringSoonWebsites.map((item, idx) => (
+              <div key={`exp-soon-${idx}`} style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                backgroundColor: 'var(--bg-card)',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span className="badge badge-warning" style={{ fontWeight: 700, padding: '4px 10px', fontSize: '0.78rem', borderRadius: '4px', backgroundColor: 'var(--warning-light)', color: 'var(--warning)' }}>
+                    DUE SOON
+                  </span>
+                  <div>
+                    <strong style={{ fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+                      {item.website_name}
+                    </strong>
+                    <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginLeft: '8px' }}>
+                      ({item.website_url.replace(/(^\w+:|^)\/\//, '')})
+                    </span>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      Client: {item.customer_name || 'Independent Setup'} | Renewal Date: {formatDateSafe(item.expiry_date)}
+                    </div>
+                  </div>
+                </div>
+                <button 
+                  className="btn btn-outline" 
+                  style={{ fontSize: '0.78rem', padding: '4px 12px' }}
+                  onClick={() => onNavigate('websites')}
+                >
+                  Manage Subscription
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recurring Payments Notifications Banner */}
       {dueRetainers.length > 0 && (

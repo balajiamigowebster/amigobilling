@@ -10,6 +10,7 @@ import Login from './components/Login';
 import EmployeeList from './components/EmployeeList';
 import Expenses from './components/Expenses';
 import ProjectAssignments from './components/ProjectAssignments';
+import WebsitesList from './components/WebsitesList';
 import { Sparkles, FileText, CheckCircle, AlertCircle, Trash2, Printer, Code, Menu } from 'lucide-react';
 import './App.css';
 
@@ -103,6 +104,8 @@ export default function App() {
               return <EmployeeList showToast={showToast} />;
             case 'project-assignments':
               return <ProjectAssignments showToast={showToast} />;
+            case 'websites':
+              return <WebsitesList showToast={showToast} />;
             case 'expenses':
               return <Expenses showToast={showToast} />;
             case 'reports':

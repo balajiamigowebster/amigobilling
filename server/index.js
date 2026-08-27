@@ -871,6 +871,96 @@ app.delete('/api/project-assignments/:id', deleteProjectAssignment);
 app.post('/api/project-assignments/:id/delete', deleteProjectAssignment);
 
 
+// ================= WEBSITES ROUTES =================
+
+// Get all websites
+app.get('/api/websites', async (req, res) => {
+  try {
+    const websites = await db.query(`
+      SELECT w.*, c.customer_name, c.customer_id_seq 
+      FROM websites w
+      LEFT JOIN customers c ON w.customer_id = c.id
+      ORDER BY w.id DESC
+    `);
+    res.json(websites);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to fetch websites.' });
+  }
+});
+
+// Add a website
+app.post('/api/websites', async (req, res) => {
+  const { customerId, websiteName, websiteUrl, status, launchDate, expiryDate, notes } = req.body;
+  if (!websiteName || !websiteUrl) {
+    return res.status(400).json({ error: 'Website Name and URL are required.' });
+  }
+  try {
+    await db.query(`
+      INSERT INTO websites (customer_id, website_name, website_url, status, launch_date, expiry_date, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `, [
+      customerId ? parseInt(customerId) : null,
+      websiteName,
+      websiteUrl,
+      status || 'Active',
+      launchDate || null,
+      expiryDate || null,
+      notes || null
+    ]);
+    res.status(201).json({ message: 'Website added successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to add website.' });
+  }
+});
+
+// Update a website
+const updateWebsite = async (req, res) => {
+  const { id } = req.params;
+  const { customerId, websiteName, websiteUrl, status, launchDate, expiryDate, notes } = req.body;
+  if (!websiteName || !websiteUrl) {
+    return res.status(400).json({ error: 'Website Name and URL are required.' });
+  }
+  try {
+    await db.query(`
+      UPDATE websites 
+      SET customer_id = ?, website_name = ?, website_url = ?, status = ?, launch_date = ?, expiry_date = ?, notes = ?
+      WHERE id = ?
+    `, [
+      customerId ? parseInt(customerId) : null,
+      websiteName,
+      websiteUrl,
+      status,
+      launchDate || null,
+      expiryDate || null,
+      notes || null,
+      id
+    ]);
+    res.json({ message: 'Website updated successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to update website.' });
+  }
+};
+app.put('/api/websites/:id', updateWebsite);
+app.post('/api/websites/:id/update', updateWebsite);
+
+// Delete a website
+const deleteWebsite = async (req, res) => {
+  const { id } = req.params;
+  try {
+    await db.query('DELETE FROM websites WHERE id = ?', [id]);
+    res.json({ message: 'Website removed successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to delete website.' });
+  }
+};
+app.delete('/api/websites/:id', deleteWebsite);
+app.post('/api/websites/:id/delete', deleteWebsite);
+
+
 // ================= GLOBAL ERROR HANDLING =================
 app.use((err, req, res, next) => {
   console.error(err.stack);
