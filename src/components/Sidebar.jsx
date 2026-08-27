@@ -36,7 +36,7 @@ export default function Sidebar({
     { id: 'proposals', label: 'Proposals', icon: Briefcase },
     { id: 'employees', label: 'Employees', icon: UserCheck },
     { id: 'project-assignments', label: 'Project Allocation', icon: FolderGit },
-    { id: 'websites', label: 'Websites', icon: Globe },
+    { id: 'websites', label: 'Website List', icon: Globe },
     { id: 'expenses', label: 'Expenses', icon: Receipt },
     { id: 'reports', label: 'Reports', icon: TrendingUp },
   ];
