@@ -369,41 +369,42 @@ export default function InvoicePrint({ invoice, onClose, autoShare }) {
               
               {/* BILL TO Client Box */}
               <div style={{
-                width: '55%',
-                flex: '0 0 55%',
+                width: '56%',
+                flex: '0 0 56%',
                 boxSizing: 'border-box',
                 border: '1px solid #cbd5e1',
                 borderRadius: '4px',
-                padding: '8px 12px',
+                padding: '6px 10px',
                 backgroundColor: '#f8fafc',
                 overflow: 'hidden'
               }}>
-                <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '11px' }}>
+                <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '10px' }}>
                   <colgroup>
-                    <col style={{ width: '30%' }} />
-                    <col style={{ width: '70%' }} />
+                    <col style={{ width: '26%' }} />
+                    <col style={{ width: '74%' }} />
                   </colgroup>
                   <tbody>
                     <tr>
-                      <td style={{ padding: '4px 0', color: '#475569', fontWeight: 700, verticalAlign: 'middle', borderBottom: '1px solid #e2e8f0' }}>BILL TO:</td>
-                      <td style={{ padding: '4px 0 4px 8px', fontWeight: '700', color: '#1e293b', borderBottom: '1px solid #e2e8f0', wordBreak: 'break-word' }}>
+                      <td style={{ padding: '3px 0', color: '#475569', fontWeight: 700, verticalAlign: 'middle', borderBottom: '1px solid #e2e8f0', fontSize: '10px' }}>BILL TO:</td>
+                      <td style={{ padding: '3px 0 3px 6px', fontWeight: '700', color: '#1e293b', borderBottom: '1px solid #e2e8f0', wordBreak: 'break-word', fontSize: '10.5px' }}>
                         {invoice.customer_name}
                       </td>
                     </tr>
                     {invoice.company_name && invoice.company_name !== invoice.customer_name && (
                       <tr>
-                        <td style={{ padding: '4px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle', borderBottom: '1px solid #e2e8f0' }}>Company</td>
-                        <td style={{ padding: '4px 0 4px 8px', fontWeight: '600', color: '#1e293b', borderBottom: '1px solid #e2e8f0', wordBreak: 'break-word' }}>
+                        <td style={{ padding: '3px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle', borderBottom: '1px solid #e2e8f0', fontSize: '9.5px' }}>Company</td>
+                        <td style={{ padding: '3px 0 3px 6px', fontWeight: '600', color: '#1e293b', borderBottom: '1px solid #e2e8f0', wordBreak: 'break-word', fontSize: '9.5px' }}>
                           {invoice.company_name}
                         </td>
                       </tr>
                     )}
                     <tr>
-                      <td style={{ padding: '4px 0', color: '#475569', fontWeight: 600, verticalAlign: 'top', borderBottom: '1px solid #e2e8f0', paddingTop: '4px' }}>Address</td>
+                      <td style={{ padding: '3px 0', color: '#475569', fontWeight: 600, verticalAlign: 'top', borderBottom: '1px solid #e2e8f0', paddingTop: '3px', fontSize: '9.5px' }}>Address</td>
                       <td style={{ 
-                        padding: '4px 0 4px 8px', 
+                        padding: '3px 0 3px 6px', 
                         color: '#333', 
-                        lineHeight: '1.45',
+                        fontSize: '9.5px',
+                        lineHeight: '1.32',
                         borderBottom: '1px solid #e2e8f0',
                         whiteSpace: 'normal', 
                         wordBreak: 'break-word' 
@@ -412,19 +413,19 @@ export default function InvoicePrint({ invoice, onClose, autoShare }) {
                       </td>
                     </tr>
                     <tr>
-                      <td style={{ padding: '4px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle', borderBottom: '1px solid #e2e8f0' }}>Pincode</td>
-                      <td style={{ padding: '4px 0 4px 8px', color: '#333', borderBottom: '1px solid #e2e8f0' }}>{invoice.pincode || '—'}</td>
+                      <td style={{ padding: '3px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle', borderBottom: '1px solid #e2e8f0', fontSize: '9.5px' }}>Pincode</td>
+                      <td style={{ padding: '3px 0 3px 6px', color: '#333', borderBottom: '1px solid #e2e8f0', fontSize: '9.5px' }}>{invoice.pincode || '—'}</td>
                     </tr>
                     <tr>
-                      <td style={{ padding: '4px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle', borderBottom: (invoice.gst_no && invoice.gst_no.trim() !== '') ? '1px solid #e2e8f0' : 'none' }}>State</td>
-                      <td style={{ padding: '4px 0 4px 8px', color: '#333', borderBottom: (invoice.gst_no && invoice.gst_no.trim() !== '') ? '1px solid #e2e8f0' : 'none' }}>
+                      <td style={{ padding: '3px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle', borderBottom: (invoice.gst_no && invoice.gst_no.trim() !== '') ? '1px solid #e2e8f0' : 'none', fontSize: '9.5px' }}>State</td>
+                      <td style={{ padding: '3px 0 3px 6px', color: '#333', borderBottom: (invoice.gst_no && invoice.gst_no.trim() !== '') ? '1px solid #e2e8f0' : 'none', fontSize: '9.5px' }}>
                         {getStateFromCity(invoice.city)}
                       </td>
                     </tr>
                     {invoice.gst_no && invoice.gst_no.trim() !== '' && (
                       <tr>
-                        <td style={{ padding: '4px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle' }}>GSTIN</td>
-                        <td style={{ padding: '4px 0 4px 8px', color: '#333' }}>
+                        <td style={{ padding: '3px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle', fontSize: '9.5px' }}>GSTIN</td>
+                        <td style={{ padding: '3px 0 3px 6px', color: '#333', fontSize: '9.5px' }}>
                           {invoice.gst_no}
                         </td>
                       </tr>
@@ -434,7 +435,7 @@ export default function InvoicePrint({ invoice, onClose, autoShare }) {
               </div>
 
               {/* Invoice Details Table */}
-              <div style={{ width: '42%', flex: '0 0 42%', boxSizing: 'border-box', overflow: 'hidden' }}>
+              <div style={{ width: '41%', flex: '0 0 41%', boxSizing: 'border-box', overflow: 'hidden' }}>
                 <table style={{ 
                   width: '100%', 
                   tableLayout: 'fixed',
