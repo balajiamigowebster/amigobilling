@@ -349,54 +349,66 @@ export default function InvoicePrint({ invoice, onClose, autoShare }) {
           </div>
 
           {/* Metadata & Billing Address Row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '16px', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '14px', marginBottom: '8px', boxSizing: 'border-box' }}>
             
             {/* BILL TO Client Box */}
             <div style={{
-              width: '58%',
+              width: '56%',
+              flex: '0 0 56%',
+              boxSizing: 'border-box',
               border: 'none',
               borderRadius: '4px',
-              padding: '8px 10px',
-              backgroundColor: '#f8fafc'
+              padding: '6px 10px',
+              backgroundColor: '#f8fafc',
+              overflow: 'hidden'
             }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.92em' }}>
+              <table style={{ width: '100%', tableLayout: 'fixed', borderCollapse: 'collapse', fontSize: '0.92em' }}>
+                <colgroup>
+                  <col style={{ width: '32%' }} />
+                  <col style={{ width: '68%' }} />
+                </colgroup>
                 <tbody>
                   <tr>
-                    <td style={{ width: '30%', padding: '2px 0', color: '#475569', fontWeight: 700 }}>BILL TO:</td>
-                    <td style={{ padding: '2px 0 2px 4px', fontWeight: '700', color: '#1e293b', borderBottom: '1px solid #cbd5e1' }}>{invoice.customer_name}</td>
+                    <td style={{ padding: '3px 0', color: '#475569', fontWeight: 700, verticalAlign: 'middle', borderBottom: '1px solid #cbd5e1' }}>BILL TO:</td>
+                    <td style={{ padding: '3px 0 3px 6px', fontWeight: '700', color: '#1e293b', borderBottom: '1px solid #cbd5e1', wordBreak: 'break-word' }}>
+                      {invoice.customer_name}
+                    </td>
                   </tr>
+                  {invoice.company_name && invoice.company_name !== invoice.customer_name && (
+                    <tr>
+                      <td style={{ padding: '3px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle', borderBottom: '1px solid #cbd5e1' }}>Company</td>
+                      <td style={{ padding: '3px 0 3px 6px', fontWeight: '600', color: '#1e293b', borderBottom: '1px solid #cbd5e1', wordBreak: 'break-word' }}>
+                        {invoice.company_name}
+                      </td>
+                    </tr>
+                  )}
                   <tr>
-                    <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600 }}>Company Name</td>
-                    <td style={{ padding: '2px 0 2px 4px', fontWeight: '700', color: '#1e293b', borderBottom: '1px solid #cbd5e1' }}>{invoice.customer_name}</td>
-                  </tr>
-                  <tr>
-                    <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600, verticalAlign: 'top', paddingTop: '2px' }}>Address</td>
+                    <td style={{ padding: '4px 0', color: '#475569', fontWeight: 600, verticalAlign: 'top', borderBottom: '1px solid #cbd5e1', paddingTop: '4px' }}>Address</td>
                     <td style={{ 
-                      padding: '2px 0 2px 4px', 
+                      padding: '4px 0 4px 6px', 
                       color: '#333', 
-                      lineHeight: '18px',
-                      backgroundImage: 'linear-gradient(to bottom, transparent 17px, #cbd5e1 17px)',
-                      backgroundSize: '100% 18px',
+                      lineHeight: '1.45',
+                      borderBottom: '1px solid #cbd5e1',
                       whiteSpace: 'normal', 
                       wordBreak: 'break-word' 
                     }}>
-                      {invoice.address || 'No. 303, C Block, Sapthagiri Sandalwood, Krishnarajapuram, Kadugodi, Bengaluru,'}
+                      {invoice.address || '—'}
                     </td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600 }}>Pincode</td>
-                    <td style={{ padding: '2px 0 2px 4px', color: '#333', borderBottom: '1px solid #cbd5e1' }}>{invoice.pincode || '560067'}</td>
+                    <td style={{ padding: '3px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle', borderBottom: '1px solid #cbd5e1' }}>Pincode</td>
+                    <td style={{ padding: '3px 0 3px 6px', color: '#333', borderBottom: '1px solid #cbd5e1' }}>{invoice.pincode || '—'}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600 }}>State</td>
-                    <td style={{ padding: '2px 0 2px 4px', color: '#333', borderBottom: '1px solid #cbd5e1' }}>
+                    <td style={{ padding: '3px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle', borderBottom: (invoice.gst_no && invoice.gst_no.trim() !== '') ? '1px solid #cbd5e1' : 'none' }}>State</td>
+                    <td style={{ padding: '3px 0 3px 6px', color: '#333', borderBottom: (invoice.gst_no && invoice.gst_no.trim() !== '') ? '1px solid #cbd5e1' : 'none' }}>
                       {getStateFromCity(invoice.city)}
                     </td>
                   </tr>
                   {invoice.gst_no && invoice.gst_no.trim() !== '' && (
                     <tr>
-                      <td style={{ padding: '2px 0', color: '#475569', fontWeight: 600 }}>GST</td>
-                      <td style={{ padding: '2px 0 2px 4px', color: '#333', borderBottom: '1px solid #cbd5e1' }}>
+                      <td style={{ padding: '3px 0', color: '#475569', fontWeight: 600, verticalAlign: 'middle' }}>GSTIN</td>
+                      <td style={{ padding: '3px 0 3px 6px', color: '#333' }}>
                         {invoice.gst_no}
                       </td>
                     </tr>
@@ -406,23 +418,28 @@ export default function InvoicePrint({ invoice, onClose, autoShare }) {
             </div>
 
             {/* Invoice Details Table */}
-            <div style={{ width: '38%' }}>
+            <div style={{ width: '40%', flex: '0 0 40%', boxSizing: 'border-box', overflow: 'hidden' }}>
               <table style={{ 
                 width: '100%', 
+                tableLayout: 'fixed',
                 borderCollapse: 'collapse', 
                 border: '1px solid #cbd5e1', 
                 fontSize: '0.88em',
                 textAlign: 'left'
               }}>
+                <colgroup>
+                  <col style={{ width: '48%' }} />
+                  <col style={{ width: '52%' }} />
+                </colgroup>
                 <tbody>
                   {[
-                    { label: 'Invoice #', val: invoice.invoice_no },
-                    { label: 'Invoice Date', val: new Date(invoice.invoice_date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) },
-                    { label: 'Quotation #', val: '—' },
-                    { label: 'Quotation Date', val: '—' },
-                    { label: 'PO Reference', val: '—' },
-                    { label: 'PO Date', val: '—' },
-                    { label: 'Vendor Code', val: '—' }
+                    { label: 'INVOICE #', val: invoice.invoice_no },
+                    { label: 'INVOICE DATE', val: new Date(invoice.invoice_date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }) },
+                    { label: 'QUOTATION #', val: '—' },
+                    { label: 'QUOTATION DATE', val: '—' },
+                    { label: 'PO REFERENCE', val: '—' },
+                    { label: 'PO DATE', val: '—' },
+                    { label: 'VENDOR CODE', val: '—' }
                   ].map((row, idx) => (
                     <tr key={idx}>
                       <th style={{ 
@@ -431,18 +448,19 @@ export default function InvoicePrint({ invoice, onClose, autoShare }) {
                         color: '#333', 
                         border: '1px solid #cbd5e1',
                         backgroundColor: '#ffffff',
-                        width: '50%',
-                        whiteSpace: 'normal' 
+                        whiteSpace: 'normal',
+                        fontSize: '0.92em'
                       }}>
                         {row.label}
                       </th>
                       <td style={{ 
                         padding: '3px 6px', 
                         color: '#1e293b', 
-                        fontWeight: '600', 
+                        fontWeight: '700', 
                         textAlign: 'center', 
                         border: '1px solid #cbd5e1',
-                        whiteSpace: 'normal' 
+                        whiteSpace: 'normal',
+                        fontSize: '0.92em'
                       }}>
                         {row.val}
                       </td>

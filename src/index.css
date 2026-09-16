@@ -566,18 +566,20 @@ tr:hover td {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(17, 24, 39, 0.4);
+  background-color: rgba(17, 24, 39, 0.45);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: stretch;
   justify-content: flex-end;
   z-index: 1000;
   animation: fadeIn 0.2s ease-out;
+  overflow: hidden;
 }
 
 .modal-backdrop.centered {
   justify-content: center;
   align-items: center;
+  padding: 16px;
 }
 
 .invoice-modal {
@@ -589,30 +591,54 @@ tr:hover td {
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   max-height: 100vh;
+  max-height: 100dvh;
   animation: slideRight 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+.invoice-modal > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  height: 100%;
 }
 
 .invoice-modal.centered {
   border-radius: var(--radius-lg);
   height: auto;
   max-height: 90vh;
+  max-height: 90dvh;
   max-width: 700px;
   animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
+.invoice-modal.centered > form {
+  max-height: 90dvh;
+}
+
 .invoice-modal-header {
-  padding: 20px 24px;
+  padding: 18px 24px;
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-shrink: 0;
+  background-color: #ffffff;
+  z-index: 10;
 }
 
 .invoice-modal-body {
   padding: 24px;
   overflow-y: auto;
-  flex: 1;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 .invoice-modal-footer {
@@ -622,6 +648,12 @@ tr:hover td {
   align-items: center;
   justify-content: flex-end;
   gap: 12px;
+  background-color: #ffffff;
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  z-index: 20;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.04);
 }
 
 /* Toast Notifications */
@@ -795,6 +827,7 @@ tr:hover td {
 @media (max-width: 768px) {
   .main-content {
     padding: 16px !important;
+    overflow-x: hidden;
   }
   
   .mobile-header-bar {
@@ -808,6 +841,83 @@ tr:hover td {
   .stats-grid {
     gap: 16px !important;
     margin-bottom: 20px !important;
+  }
+
+  /* Card Headers wrap & buttons full accessibility on mobile */
+  .card-header-flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  .card-header-flex > div:last-child {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .card-header-flex > div:last-child .btn {
+    flex: 1 1 140px !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }
+  
+  /* Mobile Modal Bottom Drawer Style */
+  .modal-backdrop {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  
+  .invoice-modal {
+    max-width: 100% !important;
+    width: 100% !important;
+    height: 94vh !important;
+    height: 94dvh !important;
+    max-height: 94vh !important;
+    max-height: 94dvh !important;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    margin: 0 !important;
+  }
+
+  .invoice-modal.centered {
+    height: auto !important;
+    max-height: 88vh !important;
+    max-height: 88dvh !important;
+    border-radius: var(--radius-lg) !important;
+    margin: 16px !important;
+  }
+
+  .invoice-modal-header {
+    padding: 14px 16px !important;
+  }
+
+  .invoice-modal-body {
+    padding: 16px !important;
+  }
+
+  .invoice-modal-footer {
+    padding: 12px 16px !important;
+    gap: 10px !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08) !important;
+    z-index: 30 !important;
+  }
+
+  .invoice-modal-footer .btn {
+    flex: 1 1 0% !important;
+    justify-content: center !important;
+    padding: 12px 14px !important;
+    font-size: 0.92rem !important;
+    min-height: 44px !important;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
   }
 }
 

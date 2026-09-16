@@ -1173,7 +1173,7 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
               <div className="invoice-modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saving || (customers.length === 0 && !editingInvoice)}>
-                  {saving ? 'Processing...' : 'Generate Invoice'}
+                  {saving ? 'Processing...' : editingInvoice ? 'Save Changes' : 'Generate Invoice'}
                 </button>
               </div>
             </form>
