@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Printer, Pencil, Trash2, Sparkles, AlertCircle, ShieldAlert, X, FileSpreadsheet } from 'lucide-react';
+import { Plus, Search, Printer, Pencil, Trash2, Sparkles, AlertCircle, ShieldAlert, X, FileSpreadsheet, RotateCcw, Calendar, Filter } from 'lucide-react';
 import { API_URL } from '../config';
 import InvoicePrint from './InvoicePrint';
 
@@ -92,7 +92,11 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [filterStatus, setFilterStatus] = useState('All'); // 'All', 'Paid', 'Unpaid', 'Pending'
-  const [filterDate, setFilterDate] = useState('All'); // 'All', 'This Month', 'Last Month', 'This Year'
+  const [filterCustomer, setFilterCustomer] = useState('All');
+  const [filterService, setFilterService] = useState('All');
+  const [filterDate, setFilterDate] = useState('All'); // 'All', 'Today', 'Yesterday', 'This Week', 'This Month', 'Last Month', 'This Year', 'Custom'
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
   const [paymentsHistory, setPaymentsHistory] = useState([]);
   const itemsPerPage = 10;
   const [loading, setLoading] = useState(true);
@@ -484,6 +488,20 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
     return 'badge badge-danger';
   };
 
+  const clientOptions = Array.from(
+    new Set([
+      ...customers.map(c => c.customer_name).filter(Boolean),
+      ...invoices.map(i => i.customer_name).filter(Boolean)
+    ])
+  ).sort((a, b) => a.localeCompare(b));
+
+  const serviceOptions = Array.from(
+    new Set([
+      ...services.map(s => s.service_name).filter(Boolean),
+      ...invoices.map(i => i.service_name).filter(Boolean)
+    ])
+  ).sort((a, b) => a.localeCompare(b));
+
   const filteredInvoices = invoices.filter(inv => {
     const query = search.toLowerCase();
     const invNo = inv.invoice_no || '';
@@ -504,17 +522,47 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
       matchesStatus = status.toLowerCase() === filterStatus.toLowerCase();
     }
 
+    // Customer filter
+    let matchesCustomer = true;
+    if (filterCustomer !== 'All') {
+      matchesCustomer = (inv.customer_name || '').toLowerCase() === filterCustomer.toLowerCase();
+    }
+
+    // Service filter
+    let matchesService = true;
+    if (filterService !== 'All') {
+      matchesService = (inv.service_name || '').toLowerCase().includes(filterService.toLowerCase());
+    }
+
     // Date filter
     let matchesDate = true;
     if (filterDate !== 'All' && inv.invoice_date) {
+      const invDateStr = inv.invoice_date.slice(0, 10);
+      const todayStr = new Date().toLocaleDateString('sv');
       const invDate = new Date(inv.invoice_date);
-      const today = new Date();
-      if (filterDate === 'This Month') {
+
+      if (filterDate === 'Today') {
+        matchesDate = invDateStr === todayStr;
+      } else if (filterDate === 'Yesterday') {
+        const yest = new Date();
+        yest.setDate(yest.getDate() - 1);
+        matchesDate = invDateStr === yest.toLocaleDateString('sv');
+      } else if (filterDate === 'This Week') {
+        const d = new Date();
+        const dayOfWeek = d.getDay(); // 0 is Sunday, 1 is Monday...
+        const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+        const monday = new Date(d);
+        monday.setDate(d.getDate() + diffToMonday);
+        const mondayStr = monday.toLocaleDateString('sv');
+        matchesDate = invDateStr >= mondayStr && invDateStr <= todayStr;
+      } else if (filterDate === 'This Month') {
+        const today = new Date();
         matchesDate = (
           invDate.getMonth() === today.getMonth() &&
           invDate.getFullYear() === today.getFullYear()
         );
       } else if (filterDate === 'Last Month') {
+        const today = new Date();
         const lastMonth = new Date();
         lastMonth.setMonth(today.getMonth() - 1);
         matchesDate = (
@@ -522,12 +570,37 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
           invDate.getFullYear() === lastMonth.getFullYear()
         );
       } else if (filterDate === 'This Year') {
+        const today = new Date();
         matchesDate = invDate.getFullYear() === today.getFullYear();
+      } else if (filterDate === 'Custom') {
+        if (customStartDate && invDateStr < customStartDate) matchesDate = false;
+        if (customEndDate && invDateStr > customEndDate) matchesDate = false;
       }
     }
 
-    return matchesSearch && matchesStatus && matchesDate;
+    return matchesSearch && matchesStatus && matchesCustomer && matchesService && matchesDate;
   });
+
+  const isFiltered = (
+    search.trim() !== '' ||
+    filterStatus !== 'All' ||
+    filterCustomer !== 'All' ||
+    filterService !== 'All' ||
+    filterDate !== 'All' ||
+    customStartDate !== '' ||
+    customEndDate !== ''
+  );
+
+  const handleResetFilters = () => {
+    setSearch('');
+    setFilterStatus('All');
+    setFilterCustomer('All');
+    setFilterService('All');
+    setFilterDate('All');
+    setCustomStartDate('');
+    setCustomEndDate('');
+    setCurrentPage(1);
+  };
 
   const totalItems = filteredInvoices.length;
   const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -579,62 +652,299 @@ export default function Billing({ onNavigate, onPrintInvoice, showToast }) {
 
       <div className="card" style={{ padding: '0 0 24px 0', gap: '16px' }}>
         {/* Search & Filters */}
-        <div style={{ padding: '24px 24px 0 24px', display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ position: 'relative', flex: '1 1 300px' }}>
-            <Search size={18} style={{
-              position: 'absolute',
-              left: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              color: 'var(--text-muted)'
-            }} />
-            <input
-              type="text"
-              className="form-input"
-              style={{ paddingLeft: '38px' }}
-              placeholder="Search invoices by invoice number, company name, service description..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-          
-          {/* Status Filter */}
-          <div style={{ flex: '0 1 180px', minWidth: '140px' }}>
-            <select
-              className="form-select"
-              value={filterStatus}
-              onChange={(e) => {
-                setFilterStatus(e.target.value);
-                setCurrentPage(1);
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              <option value="All">All Statuses</option>
-              <option value="Paid">Paid</option>
-              <option value="Unpaid">Unpaid</option>
-              <option value="Pending">Pending</option>
-            </select>
+        <div style={{ padding: '20px 24px 0 24px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+          {/* Main Filter Controls */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Search Input */}
+            <div style={{ position: 'relative', flex: '1 1 240px', minWidth: '220px' }}>
+              <Search size={18} style={{
+                position: 'absolute',
+                left: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                color: 'var(--text-muted)'
+              }} />
+              <input
+                type="text"
+                className="form-input"
+                style={{ paddingLeft: '38px', paddingRight: search ? '32px' : '12px', height: '40px' }}
+                placeholder="Search invoice #, client, service..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch('');
+                    setCurrentPage(1);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    right: '10px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: '2px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                  title="Clear search"
+                >
+                  <X size={14} />
+                </button>
+              )}
+            </div>
+            
+            {/* Status Filter */}
+            <div style={{ flex: '0 1 150px', minWidth: '130px' }}>
+              <select
+                className="form-select"
+                value={filterStatus}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value);
+                  setCurrentPage(1);
+                }}
+                style={{ cursor: 'pointer', height: '40px' }}
+              >
+                <option value="All">All Statuses</option>
+                <option value="Paid">Paid</option>
+                <option value="Unpaid">Unpaid</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+
+            {/* Client / Customer Filter */}
+            <div style={{ flex: '0 1 180px', minWidth: '150px' }}>
+              <select
+                className="form-select"
+                value={filterCustomer}
+                onChange={(e) => {
+                  setFilterCustomer(e.target.value);
+                  setCurrentPage(1);
+                }}
+                style={{ cursor: 'pointer', height: '40px' }}
+              >
+                <option value="All">All Clients</option>
+                {clientOptions.map((cName, idx) => (
+                  <option key={idx} value={cName}>{cName}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Service Filter */}
+            <div style={{ flex: '0 1 180px', minWidth: '150px' }}>
+              <select
+                className="form-select"
+                value={filterService}
+                onChange={(e) => {
+                  setFilterService(e.target.value);
+                  setCurrentPage(1);
+                }}
+                style={{ cursor: 'pointer', height: '40px' }}
+              >
+                <option value="All">All Services</option>
+                {serviceOptions.map((sName, idx) => (
+                  <option key={idx} value={sName}>{sName}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date Preset Filter */}
+            <div style={{ flex: '0 1 160px', minWidth: '140px' }}>
+              <select
+                className="form-select"
+                value={filterDate}
+                onChange={(e) => {
+                  setFilterDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+                style={{ cursor: 'pointer', height: '40px' }}
+              >
+                <option value="All">All Dates</option>
+                <option value="Today">Today</option>
+                <option value="Yesterday">Yesterday</option>
+                <option value="This Week">This Week</option>
+                <option value="This Month">This Month</option>
+                <option value="Last Month">Last Month</option>
+                <option value="This Year">This Year</option>
+                <option value="Custom">Custom Range...</option>
+              </select>
+            </div>
+
+            {/* Reset Button */}
+            {isFiltered && (
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={handleResetFilters}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  height: '40px',
+                  padding: '0 14px',
+                  color: 'var(--danger)',
+                  borderColor: 'var(--danger)'
+                }}
+                title="Reset all filters"
+              >
+                <RotateCcw size={15} /> Reset
+              </button>
+            )}
           </div>
 
-          {/* Date Filter */}
-          <div style={{ flex: '0 1 180px', minWidth: '140px' }}>
-            <select
-              className="form-select"
-              value={filterDate}
-              onChange={(e) => {
-                setFilterDate(e.target.value);
-                setCurrentPage(1);
-              }}
-              style={{ cursor: 'pointer' }}
-            >
-              <option value="All">All Dates</option>
-              <option value="This Month">This Month</option>
-              <option value="Last Month">Last Month</option>
-              <option value="This Year">This Year</option>
-            </select>
+          {/* Custom Date Range Picker (shown when filterDate === 'Custom') */}
+          {filterDate === 'Custom' && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '10px 14px',
+              backgroundColor: 'var(--bg-secondary)',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-color)',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                <Calendar size={16} style={{ color: 'var(--primary)' }} /> Custom Date Range:
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>From:</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  style={{ width: '150px', height: '34px', padding: '4px 8px', fontSize: '0.85rem' }}
+                  value={customStartDate}
+                  onChange={(e) => {
+                    setCustomStartDate(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>To:</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  style={{ width: '150px', height: '34px', padding: '4px 8px', fontSize: '0.85rem' }}
+                  value={customEndDate}
+                  onChange={(e) => {
+                    setCustomEndDate(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Active Filter Chips & Results Count */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '8px',
+            paddingTop: '4px',
+            fontSize: '0.85rem',
+            color: 'var(--text-secondary)'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                Showing {filteredInvoices.length} of {invoices.length} invoices
+              </span>
+              {isFiltered && (
+                <>
+                  {filterStatus !== 'All' && (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 8px',
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      color: 'var(--primary)',
+                      borderRadius: '12px',
+                      fontSize: '0.8rem',
+                      fontWeight: 500
+                    }}>
+                      Status: {filterStatus}
+                      <X size={12} style={{ cursor: 'pointer' }} onClick={() => { setFilterStatus('All'); setCurrentPage(1); }} />
+                    </span>
+                  )}
+                  {filterCustomer !== 'All' && (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 8px',
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      color: 'var(--primary)',
+                      borderRadius: '12px',
+                      fontSize: '0.8rem',
+                      fontWeight: 500
+                    }}>
+                      Client: {filterCustomer}
+                      <X size={12} style={{ cursor: 'pointer' }} onClick={() => { setFilterCustomer('All'); setCurrentPage(1); }} />
+                    </span>
+                  )}
+                  {filterService !== 'All' && (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 8px',
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      color: 'var(--primary)',
+                      borderRadius: '12px',
+                      fontSize: '0.8rem',
+                      fontWeight: 500
+                    }}>
+                      Service: {filterService}
+                      <X size={12} style={{ cursor: 'pointer' }} onClick={() => { setFilterService('All'); setCurrentPage(1); }} />
+                    </span>
+                  )}
+                  {filterDate !== 'All' && (
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '2px 8px',
+                      backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                      color: 'var(--primary)',
+                      borderRadius: '12px',
+                      fontSize: '0.8rem',
+                      fontWeight: 500
+                    }}>
+                      Date: {filterDate === 'Custom' ? `${customStartDate || 'Start'} to ${customEndDate || 'End'}` : filterDate}
+                      <X size={12} style={{ cursor: 'pointer' }} onClick={() => { setFilterDate('All'); setCustomStartDate(''); setCustomEndDate(''); setCurrentPage(1); }} />
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+            {isFiltered && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--primary)',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  padding: 0
+                }}
+              >
+                Clear all filters
+              </button>
+            )}
           </div>
         </div>
 

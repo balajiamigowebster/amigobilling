@@ -718,5 +718,6 @@ export default function InvoicePrint({ invoice, onClose, autoShare }) {
         </div>
       </div>
     </div>
+  </div>
   );
 }
