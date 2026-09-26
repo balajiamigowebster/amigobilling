@@ -14,7 +14,8 @@ import {
   UserCheck,
   Receipt,
   FolderGit,
-  Globe
+  Globe,
+  Home
 } from 'lucide-react';
 
 export default function Sidebar({ 
@@ -38,6 +39,7 @@ export default function Sidebar({
     { id: 'project-assignments', label: 'Project Allocation', icon: FolderGit },
     { id: 'websites', label: 'Website List', icon: Globe },
     { id: 'expenses', label: 'Expenses', icon: Receipt },
+    { id: 'house-rent', label: 'House Rent', icon: Home },
     { id: 'reports', label: 'Reports', icon: TrendingUp },
   ];
 

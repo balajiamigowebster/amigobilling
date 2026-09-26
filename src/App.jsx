@@ -12,6 +12,7 @@ import Expenses from './components/Expenses';
 import ProjectAssignments from './components/ProjectAssignments';
 import WebsitesList from './components/WebsitesList';
 import Reports from './components/Reports';
+import HouseRent from './components/HouseRent';
 import { Sparkles, FileText, CheckCircle, AlertCircle, Trash2, Printer, Code, Menu } from 'lucide-react';
 import './App.css';
 
@@ -111,6 +112,8 @@ export default function App() {
               return <Expenses showToast={showToast} />;
             case 'reports':
               return <Reports onNavigate={setActiveTab} />;
+            case 'house-rent':
+              return <HouseRent showToast={showToast} />;
             default:
               return <Dashboard onNavigate={setActiveTab} onPrintInvoice={setPrintInvoice} showToast={showToast} />;
           }
