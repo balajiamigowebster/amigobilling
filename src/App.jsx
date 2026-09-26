@@ -11,6 +11,7 @@ import EmployeeList from './components/EmployeeList';
 import Expenses from './components/Expenses';
 import ProjectAssignments from './components/ProjectAssignments';
 import WebsitesList from './components/WebsitesList';
+import Reports from './components/Reports';
 import { Sparkles, FileText, CheckCircle, AlertCircle, Trash2, Printer, Code, Menu } from 'lucide-react';
 import './App.css';
 
@@ -109,7 +110,7 @@ export default function App() {
             case 'expenses':
               return <Expenses showToast={showToast} />;
             case 'reports':
-              return <ReportsTab />;
+              return <Reports onNavigate={setActiveTab} />;
             default:
               return <Dashboard onNavigate={setActiveTab} onPrintInvoice={setPrintInvoice} showToast={showToast} />;
           }
@@ -396,73 +397,6 @@ function ProposalsTab({ showToast }) {
           <div style={{ borderTop: '1px solid #ccc', paddingTop: '12px', marginTop: '40px', display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#555' }}>
             <span>Balaji Nagarajan (Project Director)</span>
             <span>Authorized Signature</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ================= REPORTS TAB (AGENCY REVENUE REPORTS) =================
-function ReportsTab() {
-  return (
-    <div>
-      <div className="card-header-flex" style={{ marginBottom: '24px' }}>
-        <div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Agency Business Reports</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Analytical reports of monthly billing and top agency services.</p>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-        {/* Revenue chart */}
-        <div className="card" style={{ gap: '16px' }}>
-          <h3 className="card-title">Monthly Billings (₹ in Lakhs)</h3>
-          <div style={{ display: 'flex', height: '220px', alignItems: 'flex-end', justifyContent: 'space-around', padding: '20px 0 10px 0', borderBottom: '1px solid var(--border-color)' }}>
-            {[
-              { month: 'Jan', val: 2.2, color: 'var(--primary)' },
-              { month: 'Feb', val: 3.5, color: 'var(--primary)' },
-              { month: 'Mar', val: 4.8, color: 'var(--primary)' },
-              { month: 'Apr', val: 3.9, color: 'var(--primary)' },
-              { month: 'May', val: 5.4, color: 'var(--primary)' },
-              { month: 'Jun', val: 7.2, color: 'var(--primary)' }
-            ].map((bar, idx) => (
-              <div key={idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '40px' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 600, marginBottom: '6px' }}>{bar.val}L</span>
-                <div style={{ 
-                  width: '24px', 
-                  height: `${bar.val * 24}px`, 
-                  backgroundColor: bar.color, 
-                  borderRadius: '6px 6px 0 0',
-                  boxShadow: '0 4px 10px var(--primary-glow)',
-                  transition: 'height 0.3s ease'
-                }} />
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '8px', fontWeight: 500 }}>{bar.month}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Popular services chart */}
-        <div className="card" style={{ gap: '16px' }}>
-          <h3 className="card-title">Top Project Services</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '10px' }}>
-            {[
-              { name: 'E-commerce Web Development', count: 18, pct: 85, color: 'var(--primary)' },
-              { name: 'SEO Audit & Optimization', count: 14, pct: 65, color: 'var(--secondary)' },
-              { name: 'Pay-Per-Click Ads Management', count: 9, pct: 45, color: 'var(--warning)' },
-              { name: 'UI/UX Design', count: 7, pct: 35, color: 'var(--danger)' }
-            ].map((item, idx) => (
-              <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 600 }}>
-                  <span>{item.name}</span>
-                  <span style={{ color: 'var(--text-secondary)' }}>{item.count} Projects</span>
-                </div>
-                <div style={{ height: '8px', backgroundColor: 'var(--bg-primary)', borderRadius: '50px', overflow: 'hidden' }}>
-                  <div style={{ width: `${item.pct}%`, height: '100%', backgroundColor: item.color, borderRadius: '50px' }} />
-                </div>
-              </div>
-            ))}
           </div>
         </div>
       </div>
