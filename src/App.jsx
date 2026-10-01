@@ -127,7 +127,7 @@ export default function App() {
   }
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${printInvoice ? 'print-invoice-mode' : ''}`}>
       <Sidebar 
         collapsed={collapsed} 
         onToggle={() => setCollapsed(!collapsed)} 

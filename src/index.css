@@ -717,8 +717,7 @@ tr:hover td {
   }
 
   #root,
-  .app-container,
-  .main-content {
+  .app-container {
     display: block !important;
     width: 100% !important;
     height: auto !important;
@@ -731,6 +730,9 @@ tr:hover td {
 
   .sidebar,
   .sidebar-toggle-btn,
+  .mobile-header-bar,
+  .sidebar-backdrop,
+  .mobile-sidebar-backdrop,
   .invoice-modal-header,
   .invoice-modal-footer,
   .toast-container,
@@ -739,6 +741,13 @@ tr:hover td {
   header,
   button,
   .no-print {
+    display: none !important;
+  }
+
+  /* When printing an invoice or receipt overlay, completely hide main-content */
+  .print-invoice-mode .main-content,
+  body:has(.printable-invoice) .main-content,
+  body:has(.printable-receipt) .main-content > *:not(.modal-backdrop) {
     display: none !important;
   }
 
@@ -769,6 +778,10 @@ tr:hover td {
     max-height: none !important;
     animation: none !important;
     overflow: visible !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
 
   .invoice-print-sheet-wrapper {
@@ -786,24 +799,24 @@ tr:hover td {
 
   .printable-invoice,
   .invoice-modal-body.printable-invoice {
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
+    display: block !important;
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;
     height: auto !important;
-    min-height: 248mm !important;
+    min-height: 0 !important;
     padding: 0 !important;
     margin: 0 !important;
     box-sizing: border-box !important;
-    font-size: 10.5px !important;
+    font-size: 10px !important;
     line-height: 1.35 !important;
     background-color: #ffffff !important;
     color: #333333 !important;
     overflow: visible !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
 
   .printable-invoice,
