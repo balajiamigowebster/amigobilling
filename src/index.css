@@ -693,156 +693,7 @@ tr:hover td {
   display: block;
 }
 
-/* Print Styles */
-@media print {
-  * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
 
-  @page {
-    size: A4 portrait;
-    margin: 6mm 10mm;
-  }
-
-  html,
-  body {
-    width: 100% !important;
-    height: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    overflow: visible !important;
-  }
-
-  #root,
-  .app-container {
-    display: block !important;
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    position: static !important;
-    overflow: visible !important;
-  }
-
-  .sidebar,
-  .sidebar-toggle-btn,
-  .mobile-header-bar,
-  .sidebar-backdrop,
-  .mobile-sidebar-backdrop,
-  .invoice-modal-header,
-  .invoice-modal-footer,
-  .toast-container,
-  .page-enter,
-  nav,
-  header,
-  button,
-  .no-print {
-    display: none !important;
-  }
-
-  /* When printing an invoice or receipt overlay, completely hide main-content */
-  .print-invoice-mode .main-content,
-  body:has(.printable-invoice) .main-content,
-  body:has(.printable-receipt) .main-content > *:not(.modal-backdrop) {
-    display: none !important;
-  }
-
-  .modal-backdrop {
-    display: block !important;
-    position: static !important;
-    background-color: transparent !important;
-    backdrop-filter: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    width: 100% !important;
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  .invoice-modal {
-    position: static !important;
-    display: block !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    box-shadow: none !important;
-    border: none !important;
-    background-color: #ffffff !important;
-    color: #000000 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    height: auto !important;
-    max-height: none !important;
-    animation: none !important;
-    overflow: visible !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-  }
-
-  .invoice-print-sheet-wrapper {
-    display: block !important;
-    width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    overflow: visible !important;
-  }
-
-  .invoice-modal-body {
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-
-  .printable-invoice,
-  .invoice-modal-body.printable-invoice {
-    display: block !important;
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    box-sizing: border-box !important;
-    font-size: 10px !important;
-    line-height: 1.35 !important;
-    background-color: #ffffff !important;
-    color: #333333 !important;
-    overflow: visible !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-  }
-
-  .printable-invoice,
-  .printable-invoice *,
-  .printable-invoice table,
-  .printable-invoice tr,
-  .printable-invoice th,
-  .printable-invoice td,
-  .printable-invoice div {
-    border-color: #cbd5e1 !important;
-    box-sizing: border-box !important;
-  }
-
-  /* Printable Rent Receipt Slip in HouseRent.jsx */
-  .printable-receipt {
-    display: block !important;
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    padding: 6mm !important;
-    margin: 0 auto !important;
-    box-sizing: border-box !important;
-    page-break-inside: avoid !important;
-    break-inside: avoid !important;
-  }
-}
 
 /* Animations */
 @keyframes fadeIn {
@@ -888,7 +739,7 @@ tr:hover td {
   gap: 24px;
 }
 
-@media (max-width: 1024px) {
+@media screen and (max-width: 1024px) {
   .mobile-header-bar {
     display: flex !important;
   }
@@ -903,14 +754,14 @@ tr:hover td {
   }
 }
 
-@media (max-width: 900px) {
+@media screen and (max-width: 900px) {
   .meetings-grid,
   .proposals-grid {
     grid-template-columns: 1fr !important;
   }
 }
 
-@media (max-width: 768px) {
+@media screen and (max-width: 768px) {
   .main-content {
     padding: 16px !important;
     overflow-x: hidden;
@@ -1094,4 +945,161 @@ tr:hover td {
   color: #ffffff;
   border-color: var(--primary);
   box-shadow: 0 4px 10px var(--primary-glow);
+}
+
+/* ==========================================================================
+   Print Styles (Placed at end of stylesheet to ensure authoritative cascade)
+   ========================================================================== */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    size: A4 portrait;
+    margin: 6mm 10mm;
+  }
+
+  html,
+  body {
+    width: 100% !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+  }
+
+  #root,
+  .app-container {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    overflow: visible !important;
+  }
+
+  .sidebar,
+  .sidebar-toggle-btn,
+  .mobile-header-bar,
+  .sidebar-backdrop,
+  .mobile-sidebar-backdrop,
+  .invoice-modal-header,
+  .invoice-modal-footer,
+  .toast-container,
+  .page-enter,
+  nav,
+  header,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Completely hide main-content when printing invoice or receipt overlay */
+  .print-invoice-mode .main-content,
+  body:has(.printable-invoice) .main-content,
+  body:has(.printable-receipt) .main-content > *:not(.modal-backdrop) {
+    display: none !important;
+  }
+
+  .modal-backdrop,
+  .modal-backdrop.centered {
+    display: block !important;
+    position: static !important;
+    background-color: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .invoice-modal,
+  .invoice-modal.centered {
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    animation: none !important;
+    overflow: visible !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .invoice-print-sheet-wrapper {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .invoice-modal-body,
+  .invoice-modal-body.printable-invoice {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .printable-invoice {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    font-size: 10px !important;
+    line-height: 1.35 !important;
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    overflow: visible !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  .printable-invoice,
+  .printable-invoice *,
+  .printable-invoice table,
+  .printable-invoice tr,
+  .printable-invoice th,
+  .printable-invoice td,
+  .printable-invoice div {
+    border-color: #cbd5e1 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Printable Rent Receipt Slip in HouseRent.jsx */
+  .printable-receipt {
+    display: block !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    padding: 6mm !important;
+    margin: 0 auto !important;
+    box-sizing: border-box !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
 }
