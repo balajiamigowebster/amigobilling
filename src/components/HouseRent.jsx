@@ -1391,7 +1391,7 @@ export default function HouseRent({ showToast }) {
               </div>
             </div>
 
-            <div ref={receiptPrintRef} style={{ padding: '30px', fontFamily: "'Inter', sans-serif", fontSize: '13px', lineHeight: 1.5 }}>
+            <div ref={receiptPrintRef} className="printable-receipt" style={{ padding: '30px', fontFamily: "'Inter', sans-serif", fontSize: '13px', lineHeight: 1.5 }}>
               {/* Receipt Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #0f172a', paddingBottom: '14px', marginBottom: '20px' }}>
                 <div>
