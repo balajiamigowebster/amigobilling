@@ -24,7 +24,11 @@ import {
   Building,
   RotateCcw,
   Check,
-  Send
+  Send,
+  ChevronLeft,
+  ChevronRight,
+  CheckCheck,
+  Undo2
 } from 'lucide-react';
 import { API_URL } from '../config';
 
@@ -123,6 +127,54 @@ export default function HouseRent({ showToast }) {
   const [deletingHouse, setDeletingHouse] = useState(null);
   const [payingHouse, setPayingHouse] = useState(null);
   const [viewingReceipt, setViewingReceipt] = useState(null);
+  const [quickPayHouse, setQuickPayHouse] = useState(null);
+  const [statusModalHouse, setStatusModalHouse] = useState(null);
+
+  // Month Period Selection
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const selectedMonthYearName = useMemo(() => {
+    return selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }, [selectedDate]);
+
+  const currentMonthYearName = useMemo(() => {
+    return new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }, []);
+
+  const allMonthsOfYear = useMemo(() => {
+    const year = selectedDate.getFullYear();
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return months.map(m => `${m} ${year}`);
+  }, [selectedDate]);
+
+  const handlePrevMonth = () => {
+    setSelectedDate(prev => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() - 1);
+      return d;
+    });
+  };
+
+  const handleNextMonth = () => {
+    setSelectedDate(prev => {
+      const d = new Date(prev);
+      d.setMonth(d.getMonth() + 1);
+      return d;
+    });
+  };
+
+  // Quick Pay Form
+  const [quickPayForm, setQuickPayForm] = useState({
+    month: selectedMonthYearName,
+    amount: '',
+    paidDate: new Date().toLocaleDateString('sv'),
+    paymentMode: 'GPay / UPI',
+    referenceId: '',
+    notes: ''
+  });
 
   // Form for House/Tenant details
   const [form, setForm] = useState({
@@ -146,12 +198,8 @@ export default function HouseRent({ showToast }) {
   const [saving, setSaving] = useState(false);
 
   // Form for recording rent payment
-  const currentMonthYearName = useMemo(() => {
-    return new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  }, []);
-
   const [paymentForm, setPaymentForm] = useState({
-    month: currentMonthYearName,
+    month: selectedMonthYearName,
     amount: '',
     paidDate: new Date().toLocaleDateString('sv'),
     paymentMode: 'GPay / UPI',
@@ -224,11 +272,17 @@ export default function HouseRent({ showToast }) {
     }
   };
 
-  // Helper to check if tenant has paid current month
-  const isPaidThisMonth = (house) => {
-    if (!house.paymentHistory || house.paymentHistory.length === 0) return false;
-    return house.paymentHistory.some(p => p.month === currentMonthYearName && p.status === 'Paid');
+  // Helper to get payment record for a given month
+  const getPaymentForMonth = (house, monthName = selectedMonthYearName) => {
+    if (!house || !house.paymentHistory || house.paymentHistory.length === 0) return null;
+    return house.paymentHistory.find(p => p.month === monthName && p.status === 'Paid') || null;
   };
+
+  const isPaidForMonth = (house, monthName = selectedMonthYearName) => {
+    return Boolean(getPaymentForMonth(house, monthName));
+  };
+
+  const isPaidThisMonth = (house) => isPaidForMonth(house, selectedMonthYearName);
 
   // KPI Calculations
   const metrics = useMemo(() => {
@@ -243,11 +297,11 @@ export default function HouseRent({ showToast }) {
     // Total Expected Monthly Rent
     const totalMonthlyRentExpected = occupiedHouses.reduce((sum, h) => sum + (parseFloat(h.monthlyRent) || 0), 0);
 
-    // Total Collected for Current Month
+    // Total Collected for Selected Month
     let rentCollectedThisMonth = 0;
     let paidTenantsCount = 0;
     occupiedHouses.forEach(h => {
-      const thisMonthPayments = (h.paymentHistory || []).filter(p => p.month === currentMonthYearName && p.status === 'Paid');
+      const thisMonthPayments = (h.paymentHistory || []).filter(p => p.month === selectedMonthYearName && p.status === 'Paid');
       const paidAmt = thisMonthPayments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
       rentCollectedThisMonth += paidAmt;
       if (paidAmt >= (parseFloat(h.monthlyRent) || 0)) {
@@ -269,7 +323,7 @@ export default function HouseRent({ showToast }) {
       paidTenantsCount,
       pendingTenantsCount
     };
-  }, [houseRents, currentMonthYearName]);
+  }, [houseRents, selectedMonthYearName]);
 
   // Filtered List
   const filteredHouses = useMemo(() => {
@@ -289,14 +343,14 @@ export default function HouseRent({ showToast }) {
 
       let matchPayment = true;
       if (filterPayment !== 'All') {
-        const paid = isPaidThisMonth(h);
+        const paid = isPaidForMonth(h, selectedMonthYearName);
         if (filterPayment === 'Paid') matchPayment = paid;
         if (filterPayment === 'Pending') matchPayment = !paid && h.status === 'Occupied';
       }
 
       return matchSearch && matchStatus && matchPayment;
     });
-  }, [houseRents, search, filterStatus, filterPayment, currentMonthYearName]);
+  }, [houseRents, search, filterStatus, filterPayment, selectedMonthYearName]);
 
   // Open Add House Modal
   const handleOpenAddModal = () => {
@@ -421,13 +475,138 @@ export default function HouseRent({ showToast }) {
   const handleOpenPaymentModal = (house) => {
     setPayingHouse(house);
     setPaymentForm({
-      month: currentMonthYearName,
+      month: selectedMonthYearName,
       amount: house.monthlyRent ? house.monthlyRent.toString() : '',
       paidDate: new Date().toLocaleDateString('sv'),
       paymentMode: 'GPay / UPI',
       referenceId: '',
       notes: ''
     });
+  };
+
+  // Open Quick Pay Modal (to mark a specific month as paid)
+  const handleOpenQuickPayModal = (house, month = selectedMonthYearName) => {
+    setQuickPayHouse(house);
+    setQuickPayForm({
+      month: month,
+      amount: house.monthlyRent ? house.monthlyRent.toString() : '',
+      paidDate: new Date().toLocaleDateString('sv'),
+      paymentMode: 'GPay / UPI',
+      referenceId: '',
+      notes: ''
+    });
+  };
+
+  // Submit Quick Pay to mark as Paid
+  const handleQuickPaySubmit = async (e) => {
+    e.preventDefault();
+    if (!quickPayHouse || !quickPayForm.amount || !quickPayForm.month) return;
+
+    try {
+      const pAmt = parseFloat(quickPayForm.amount) || 0;
+      const receiptNo = `RENT-REC-${Math.floor(1000 + Math.random() * 9000)}`;
+
+      const newPayment = {
+        id: `pay-${Date.now()}`,
+        month: quickPayForm.month,
+        amount: pAmt,
+        paidDate: quickPayForm.paidDate,
+        paymentMode: quickPayForm.paymentMode,
+        referenceId: quickPayForm.referenceId || '—',
+        receiptNo,
+        notes: quickPayForm.notes || 'Monthly rent paid',
+        status: 'Paid'
+      };
+
+      const updatedList = houseRents.map(h => {
+        if (h.id === quickPayHouse.id) {
+          const currentHistory = (h.paymentHistory || []).filter(p => !(p.month === quickPayForm.month && p.status === 'Paid'));
+          return {
+            ...h,
+            paymentHistory: [newPayment, ...currentHistory]
+          };
+        }
+        return h;
+      });
+
+      await saveHouseRentsState(updatedList);
+
+      const targetTenantName = quickPayHouse.tenantName || 'Tenant';
+      if (payingHouse && payingHouse.id === quickPayHouse.id) {
+        const fresh = updatedList.find(h => h.id === quickPayHouse.id);
+        setPayingHouse(fresh);
+      }
+      setQuickPayHouse(null);
+
+      if (showToast) {
+        showToast(`Rent for ${targetTenantName} marked as PAID for ${quickPayForm.month} (₹${pAmt.toLocaleString('en-IN')})!`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update rent payment status.');
+    }
+  };
+
+  // Revert a month's rent status back to Pending
+  const handleRevertToPending = async (house, monthName) => {
+    if (!window.confirm(`Mark rent as PENDING for ${house.tenantName} for ${monthName}? This will remove the recorded payment.`)) {
+      return;
+    }
+
+    try {
+      const updatedList = houseRents.map(h => {
+        if (h.id === house.id) {
+          return {
+            ...h,
+            paymentHistory: (h.paymentHistory || []).filter(p => !(p.month === monthName && p.status === 'Paid'))
+          };
+        }
+        return h;
+      });
+
+      await saveHouseRentsState(updatedList);
+      setStatusModalHouse(null);
+      if (payingHouse && payingHouse.id === house.id) {
+        const fresh = updatedList.find(h => h.id === house.id);
+        setPayingHouse(fresh);
+      }
+
+      if (showToast) {
+        showToast(`Rent for ${house.tenantName} reverted to PENDING for ${monthName}.`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to revert rent status.');
+    }
+  };
+
+  // Delete a Payment in Ledger
+  const handleDeletePayment = async (houseId, paymentId) => {
+    if (!window.confirm("Are you sure you want to delete this payment receipt?")) return;
+
+    try {
+      const updatedList = houseRents.map(h => {
+        if (h.id === houseId) {
+          return {
+            ...h,
+            paymentHistory: (h.paymentHistory || []).filter(p => p.id !== paymentId)
+          };
+        }
+        return h;
+      });
+
+      await saveHouseRentsState(updatedList);
+      if (payingHouse && payingHouse.id === houseId) {
+        const fresh = updatedList.find(h => h.id === houseId);
+        setPayingHouse(fresh);
+      }
+      if (showToast) {
+        showToast('Payment receipt removed successfully.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete payment receipt.');
+    }
   };
 
   // Record a Rent Payment
@@ -453,7 +632,7 @@ export default function HouseRent({ showToast }) {
 
       const updatedList = houseRents.map(h => {
         if (h.id === payingHouse.id) {
-          const currentHistory = h.paymentHistory || [];
+          const currentHistory = (h.paymentHistory || []).filter(p => !(p.month === paymentForm.month && p.status === 'Paid'));
           return {
             ...h,
             paymentHistory: [newPayment, ...currentHistory]
@@ -497,7 +676,7 @@ export default function HouseRent({ showToast }) {
       'Advance Received (INR)', 
       'Advance Date', 
       'Rent Due Day', 
-      'Current Month Status', 
+      `Rent Status (${selectedMonthYearName})`, 
       'Property Status'
     ];
 
@@ -510,7 +689,7 @@ export default function HouseRent({ showToast }) {
       h.advanceAmount,
       h.advancePaymentDate || '',
       h.rentDueDay || 1,
-      isPaidThisMonth(h) ? 'Paid' : 'Pending',
+      isPaidForMonth(h, selectedMonthYearName) ? 'Paid' : 'Pending',
       h.status
     ]);
 
@@ -532,7 +711,7 @@ export default function HouseRent({ showToast }) {
   // Send WhatsApp Reminder
   const handleWhatsAppReminder = (house) => {
     const cleanPhone = (house.tenantPhone || '').replace(/[^0-9]/g, '');
-    const msg = `Dear ${house.tenantName},\n\nThis is a friendly reminder regarding the monthly house rent of ₹${parseFloat(house.monthlyRent).toLocaleString('en-IN')} for ${house.propertyName} (${currentMonthYearName}).\n\nAdvance / Security Deposit on record: ₹${parseFloat(house.advanceAmount).toLocaleString('en-IN')}.\n\nPlease remit the rent at your earliest convenience.\n\nThank you!`;
+    const msg = `Dear ${house.tenantName},\n\nThis is a friendly reminder regarding the monthly house rent of ₹${parseFloat(house.monthlyRent).toLocaleString('en-IN')} for ${house.propertyName} (${selectedMonthYearName}).\n\nAdvance / Security Deposit on record: ₹${parseFloat(house.advanceAmount).toLocaleString('en-IN')}.\n\nPlease remit the rent at your earliest convenience.\n\nThank you!`;
     const url = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   };
@@ -551,6 +730,56 @@ export default function HouseRent({ showToast }) {
         </div>
 
         <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Month Period Selector Control */}
+          <div style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            backgroundColor: 'var(--bg-card)',
+            border: '1.5px solid var(--border-color)',
+            borderRadius: 'var(--radius-md)',
+            padding: '4px 6px',
+            boxShadow: 'var(--shadow-sm)'
+          }}>
+            <button
+              type="button"
+              onClick={handlePrevMonth}
+              className="btn-pagination-number"
+              style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title="Previous Month"
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <div style={{ padding: '0 10px', textAlign: 'center', minWidth: '135px' }}>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>
+                Rent Period
+              </div>
+              <div style={{ fontWeight: 800, fontSize: '0.94rem', color: 'var(--primary)' }}>
+                {selectedMonthYearName}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={handleNextMonth}
+              className="btn-pagination-number"
+              style={{ width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title="Next Month"
+            >
+              <ChevronRight size={18} />
+            </button>
+          </div>
+
+          {selectedMonthYearName !== currentMonthYearName && (
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setSelectedDate(new Date())}
+              style={{ padding: '8px 12px', fontSize: '0.82rem' }}
+              title="Jump to current calendar month"
+            >
+              Current Month
+            </button>
+          )}
+
           <button 
             className="btn btn-secondary" 
             onClick={handleExportCSV}
@@ -622,7 +851,7 @@ export default function HouseRent({ showToast }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Rent Collected ({currentMonthYearName.split(' ')[0]})
+                Rent Collected ({selectedMonthYearName.split(' ')[0]})
               </span>
               <h2 style={{ fontSize: '1.9rem', fontWeight: 800, marginTop: '8px', color: '#059669' }}>
                 ₹{metrics.rentCollectedThisMonth.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -642,7 +871,7 @@ export default function HouseRent({ showToast }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Pending Rent ({currentMonthYearName.split(' ')[0]})
+                Pending Rent ({selectedMonthYearName.split(' ')[0]})
               </span>
               <h2 style={{ fontSize: '1.9rem', fontWeight: 800, marginTop: '8px', color: metrics.pendingRentThisMonth > 0 ? 'var(--danger)' : 'var(--success)' }}>
                 ₹{metrics.pendingRentThisMonth.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
@@ -714,8 +943,8 @@ export default function HouseRent({ showToast }) {
             </select>
           </div>
 
-          {/* Current Month Rent Status Filter */}
-          <div style={{ flex: '0 1 180px' }}>
+          {/* Rent Status Filter */}
+          <div style={{ flex: '0 1 190px' }}>
             <select
               className="form-select"
               value={filterPayment}
@@ -723,8 +952,8 @@ export default function HouseRent({ showToast }) {
               style={{ height: '40px', cursor: 'pointer' }}
             >
               <option value="All">All Rent Statuses</option>
-              <option value="Paid">Rent Paid ({currentMonthYearName.split(' ')[0]})</option>
-              <option value="Pending">Rent Pending</option>
+              <option value="Paid">Rent Paid ({selectedMonthYearName.split(' ')[0]})</option>
+              <option value="Pending">Rent Pending ({selectedMonthYearName.split(' ')[0]})</option>
             </select>
           </div>
 
@@ -762,14 +991,14 @@ export default function HouseRent({ showToast }) {
                   <th style={{ textAlign: 'right' }}>Monthly Rent</th>
                   <th style={{ textAlign: 'right', color: '#047857' }}>Advance Received</th>
                   <th style={{ textAlign: 'center' }}>Due Day</th>
-                  <th style={{ textAlign: 'center' }}>Current Month</th>
+                  <th style={{ textAlign: 'center' }}>Rent Status ({selectedMonthYearName.split(' ')[0]})</th>
                   <th style={{ textAlign: 'center' }}>Status</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredHouses.map((house) => {
-                  const paid = isPaidThisMonth(house);
+                  const paid = isPaidForMonth(house, selectedMonthYearName);
                   const cleanPhone = (house.tenantPhone || '').replace(/[^0-9]/g, '');
 
                   return (
@@ -826,18 +1055,74 @@ export default function HouseRent({ showToast }) {
                         {house.rentDueDay ? `${house.rentDueDay}th` : '1st'}
                       </td>
 
-                      {/* Current Month Rent Status */}
+                      {/* Current Month Rent Status (INTERACTIVE CLICK-TO-UPDATE) */}
                       <td style={{ textAlign: 'center' }}>
                         {house.status !== 'Occupied' ? (
                           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>—</span>
                         ) : paid ? (
-                          <span className="badge badge-success" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <CheckCircle2 size={12} /> Paid
-                          </span>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                            <button
+                              type="button"
+                              onClick={() => setStatusModalHouse(house)}
+                              className="badge badge-success"
+                              style={{
+                                cursor: 'pointer',
+                                border: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '5px 12px',
+                                fontSize: '0.78rem',
+                                boxShadow: '0 2px 5px rgba(16, 185, 129, 0.25)',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title={`Paid for ${selectedMonthYearName}. Click to view details or revert to Pending.`}
+                            >
+                              <CheckCircle2 size={13} /> Paid
+                            </button>
+                            <span style={{ fontSize: '0.72rem', color: '#059669', fontWeight: 600 }}>
+                              {getPaymentForMonth(house, selectedMonthYearName)?.paidDate || 'Paid'}
+                            </span>
+                          </div>
                         ) : (
-                          <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                            <Clock size={12} /> Pending
-                          </span>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '3px' }}>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenQuickPayModal(house, selectedMonthYearName)}
+                              className="badge badge-warning"
+                              style={{
+                                cursor: 'pointer',
+                                border: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '5px 12px',
+                                fontSize: '0.78rem',
+                                boxShadow: '0 2px 5px rgba(245, 158, 11, 0.25)',
+                                transition: 'all 0.15s ease'
+                              }}
+                              title={`Click to mark ${selectedMonthYearName} rent as PAID`}
+                            >
+                              <Clock size={13} /> Pending
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenQuickPayModal(house, selectedMonthYearName)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--primary)',
+                                fontSize: '0.73rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                textDecoration: 'underline',
+                                padding: '1px 4px'
+                              }}
+                              title={`Quickly record payment for ${selectedMonthYearName}`}
+                            >
+                              + Mark Paid
+                            </button>
+                          </div>
                         )}
                       </td>
 
@@ -1213,6 +1498,110 @@ export default function HouseRent({ showToast }) {
                 </div>
               </div>
 
+              {/* 12-Month Year Overview Matrix */}
+              <div style={{ marginBottom: '22px', padding: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                  <h4 style={{ fontSize: '0.92rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Calendar size={16} style={{ color: 'var(--primary)' }} />
+                    {selectedDate.getFullYear()} Rent Payment Calendar
+                  </h4>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                    Quick-view status for all 12 months
+                  </span>
+                </div>
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(105px, 1fr))',
+                  gap: '8px'
+                }}>
+                  {allMonthsOfYear.map(monthName => {
+                    const isPaid = isPaidForMonth(payingHouse, monthName);
+                    const payment = getPaymentForMonth(payingHouse, monthName);
+                    const shortMonth = monthName.split(' ')[0].substring(0, 3);
+                    return (
+                      <div 
+                        key={monthName}
+                        style={{
+                          border: isPaid ? '1.5px solid #10b981' : '1px dashed var(--border-color)',
+                          backgroundColor: isPaid ? 'rgba(16, 185, 129, 0.08)' : '#fff',
+                          borderRadius: '6px',
+                          padding: '8px 6px',
+                          textAlign: 'center',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: '6px'
+                        }}
+                      >
+                        <div style={{ fontSize: '0.78rem', fontWeight: 700, color: isPaid ? '#047857' : 'var(--text-main)' }}>
+                          {shortMonth}
+                        </div>
+                        {isPaid ? (
+                          <div>
+                            <div style={{ 
+                              fontSize: '0.7rem', 
+                              color: '#047857', 
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '2px',
+                              marginBottom: '2px'
+                            }}>
+                              <CheckCheck size={12} /> ₹{parseFloat(payment.amount).toLocaleString('en-IN')}
+                            </div>
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => handleRevertToPending(payingHouse, monthName)}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'var(--danger)',
+                                  fontSize: '0.68rem',
+                                  cursor: 'pointer',
+                                  textDecoration: 'underline',
+                                  padding: 0
+                                }}
+                                title="Revert to Pending"
+                              >
+                                Revert
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPaymentForm(prev => ({
+                                  ...prev,
+                                  month: monthName,
+                                  amount: payingHouse.monthlyRent ? payingHouse.monthlyRent.toString() : ''
+                                }));
+                              }}
+                              className="btn btn-outline"
+                              style={{
+                                padding: '3px 6px',
+                                fontSize: '0.7rem',
+                                width: '100%',
+                                justifyContent: 'center',
+                                borderColor: '#f59e0b',
+                                color: '#b45309',
+                                backgroundColor: 'rgba(245, 158, 11, 0.08)'
+                              }}
+                              title={`Set form to ${monthName}`}
+                            >
+                              + Pay
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Record Payment Form */}
               <form onSubmit={handleRecordPayment} style={{ 
                 padding: '16px', 
@@ -1331,6 +1720,7 @@ export default function HouseRent({ showToast }) {
                         <th>Payment Mode</th>
                         <th>Ref #</th>
                         <th style={{ textAlign: 'center' }}>Receipt</th>
+                        <th style={{ textAlign: 'center' }}>Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1352,7 +1742,17 @@ export default function HouseRent({ showToast }) {
                               onClick={() => setViewingReceipt({ house: payingHouse, payment: p })}
                               style={{ padding: '4px 8px', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
                             >
-                              <Printer size={12} /> View Receipt
+                              <Printer size={12} /> View
+                            </button>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              className="btn btn-danger btn-icon-only"
+                              onClick={() => handleDeletePayment(payingHouse.id, p.id)}
+                              title="Delete Payment Receipt"
+                              style={{ width: '28px', height: '28px', padding: '4px' }}
+                            >
+                              <Trash2 size={13} />
                             </button>
                           </td>
                         </tr>
@@ -1498,6 +1898,232 @@ export default function HouseRent({ showToast }) {
           </div>
         </div>
       )}
+
+      {/* ================= QUICK PAY / MARK PAID MODAL ================= */}
+      {quickPayHouse && (
+        <div className="modal-backdrop centered" onClick={() => setQuickPayHouse(null)}>
+          <div className="invoice-modal centered" style={{ maxWidth: '520px', width: '95%' }} onClick={e => e.stopPropagation()}>
+            <div className="invoice-modal-header">
+              <div>
+                <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, margin: 0 }}>
+                  <CheckCircle2 size={20} style={{ color: '#10b981' }} />
+                  Update Rent Status — Mark as Paid
+                </h3>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
+                  {quickPayHouse.propertyName} • Tenant: <strong>{quickPayHouse.tenantName}</strong>
+                </p>
+              </div>
+              <button onClick={() => setQuickPayHouse(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleQuickPaySubmit}>
+              <div className="invoice-modal-body" style={{ padding: '20px' }}>
+                
+                <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '8px', padding: '12px 16px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: '#047857' }}>Month / Period</span>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#065f46' }}>{quickPayForm.month}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', fontWeight: 700, color: '#047857' }}>Monthly Rent</span>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#047857' }}>₹{parseFloat(quickPayHouse.monthlyRent || 0).toLocaleString('en-IN')}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '14px' }}>
+                  <label className="form-label">Amount Paid / Received (INR) *</label>
+                  <input
+                    type="number"
+                    step="any"
+                    className="form-input"
+                    value={quickPayForm.amount}
+                    onChange={e => setQuickPayForm({ ...quickPayForm, amount: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="form-grid" style={{ marginBottom: '14px' }}>
+                  <div className="form-group">
+                    <label className="form-label">Payment Date *</label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      value={quickPayForm.paidDate}
+                      onChange={e => setQuickPayForm({ ...quickPayForm, paidDate: e.target.value })}
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Payment Mode *</label>
+                    <select
+                      className="form-select"
+                      value={quickPayForm.paymentMode}
+                      onChange={e => setQuickPayForm({ ...quickPayForm, paymentMode: e.target.value })}
+                    >
+                      <option value="GPay / UPI">GPay / PhonePe / UPI</option>
+                      <option value="Bank Transfer">Bank Transfer / NEFT</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Cheque">Cheque</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: '14px' }}>
+                  <label className="form-label">Transaction / Reference ID (Optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. UPI Ref #492810928 / Cheque #123456"
+                    value={quickPayForm.referenceId}
+                    onChange={e => setQuickPayForm({ ...quickPayForm, referenceId: e.target.value })}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Note / Remarks (Optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. Received on time"
+                    value={quickPayForm.notes}
+                    onChange={e => setQuickPayForm({ ...quickPayForm, notes: e.target.value })}
+                  />
+                </div>
+
+              </div>
+
+              <div className="invoice-modal-footer">
+                <button type="button" className="btn btn-outline" onClick={() => setQuickPayHouse(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ backgroundColor: '#10b981', borderColor: '#10b981' }}>
+                  <CheckCheck size={16} /> Confirm & Mark as Paid
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= STATUS DETAILS & REVERT MODAL ================= */}
+      {statusModalHouse && (() => {
+        const payment = getPaymentForMonth(statusModalHouse, selectedMonthYearName);
+        return (
+          <div className="modal-backdrop centered" onClick={() => setStatusModalHouse(null)}>
+            <div className="invoice-modal centered" style={{ maxWidth: '480px', width: '95%' }} onClick={e => e.stopPropagation()}>
+              <div className="invoice-modal-header">
+                <div>
+                  <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, margin: 0, color: '#047857' }}>
+                    <CheckCircle2 size={20} /> Rent Payment Details
+                  </h3>
+                  <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '4px', margin: 0 }}>
+                    {statusModalHouse.propertyName} • {selectedMonthYearName}
+                  </p>
+                </div>
+                <button onClick={() => setStatusModalHouse(null)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="invoice-modal-body" style={{ padding: '20px' }}>
+                <div style={{ 
+                  backgroundColor: 'rgba(16, 185, 129, 0.08)', 
+                  borderRadius: '8px', 
+                  padding: '16px', 
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  marginBottom: '16px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 700, color: '#047857', letterSpacing: '0.5px' }}>
+                    Rent Status: PAID
+                  </div>
+                  <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#047857', margin: '4px 0' }}>
+                    ₹{payment ? parseFloat(payment.amount).toLocaleString('en-IN') : parseFloat(statusModalHouse.monthlyRent).toLocaleString('en-IN')}
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Tenant: <strong>{statusModalHouse.tenantName}</strong> ({statusModalHouse.tenantPhone})
+                  </div>
+                </div>
+
+                {payment ? (
+                  <div style={{ border: '1px solid var(--border-color)', borderRadius: '6px', padding: '12px 14px', fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Receipt Number:</span>
+                      <strong>{payment.receiptNo}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Payment Date:</span>
+                      <strong>{payment.paidDate}</strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>Payment Mode:</span>
+                      <span className="badge badge-secondary">{payment.paymentMode}</span>
+                    </div>
+                    {payment.referenceId && payment.referenceId !== '—' && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Reference ID:</span>
+                        <span>{payment.referenceId}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ padding: '12px', fontSize: '0.85rem', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                    Payment confirmed for this month.
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {payment && (
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      style={{ width: '100%', justifyContent: 'center', gap: '6px' }}
+                      onClick={() => {
+                        setViewingReceipt({ house: statusModalHouse, payment });
+                        setStatusModalHouse(null);
+                      }}
+                    >
+                      <Printer size={15} /> View & Print Receipt
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    style={{ width: '100%', justifyContent: 'center', gap: '6px' }}
+                    onClick={() => {
+                      const target = statusModalHouse;
+                      setStatusModalHouse(null);
+                      handleOpenPaymentModal(target);
+                    }}
+                  >
+                    <CreditCard size={15} /> Open Full Rent Ledger
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    style={{ width: '100%', justifyContent: 'center', gap: '6px', marginTop: '4px' }}
+                    onClick={() => handleRevertToPending(statusModalHouse, selectedMonthYearName)}
+                  >
+                    <Undo2 size={15} /> Revert Status to Pending
+                  </button>
+                </div>
+              </div>
+
+              <div className="invoice-modal-footer">
+                <button type="button" className="btn btn-outline" onClick={() => setStatusModalHouse(null)}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );
